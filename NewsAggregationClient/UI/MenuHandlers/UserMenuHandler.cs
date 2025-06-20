@@ -317,7 +317,7 @@ public class UserMenuHandler : IMenuHandler
                             Environment.Exit(0);
                             break;
                         case "3":
-                        //    await DeleteSavedArticleAsync(user);
+                           // await DeleteSavedArticleAsync(user);
                             // Refresh the saved articles list
                             response = await _apiService.GetSavedArticlesAsync(user.Id);
                             if (!response.Success || response.Data == null || !response.Data.Any())

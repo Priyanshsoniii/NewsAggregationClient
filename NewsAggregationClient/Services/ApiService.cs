@@ -87,8 +87,14 @@ public class ApiService : IApiService
             var response = await _httpClient.GetAsync($"api/News/saved/{userId}");
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<ApiResponse<List<NewsArticle>>>(responseContent, _jsonOptions);
-            return result ?? new ApiResponse<List<NewsArticle>> { Success = false, Message = "Failed to fetch saved articles" };
+            var articles = JsonSerializer.Deserialize<List<NewsArticle>>(responseContent, _jsonOptions) ?? new List<NewsArticle>();
+
+            return new ApiResponse<List<NewsArticle>>
+            {
+                Success = true,
+                Message = "Saved articles fetched successfully",
+                Data = articles
+            };
         }
         catch (Exception ex)
         {
@@ -105,7 +111,7 @@ public class ApiService : IApiService
     {
         try
         {
-            // Use the correct endpoint
+
             var url = "api/News/headlines/today";
 
             var response = await _httpClient.GetAsync(url);
@@ -199,7 +205,26 @@ public class ApiService : IApiService
         }
     }
 
+    public async Task<ApiResponse<bool>> DeleteSavedArticleAsync(int articleId)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"{_config.BaseUrl}/api/news/saved/{articleId}");
+            var responseContent = await response.Content.ReadAsStringAsync();
 
+            var result = JsonSerializer.Deserialize<ApiResponse<bool>>(responseContent, _jsonOptions);
+            return result ?? new ApiResponse<bool> { Success = false, Message = "Failed to delete article" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
     Task<ApiResponse<object>> IApiService.AddNewsCategoryAsync(AddCategoryRequest request)
     {
         throw new NotImplementedException();
@@ -284,28 +309,6 @@ public class ApiService : IApiService
     //    catch (Exception ex)
     //    {
     //        return new ApiResponse<NewsResponse>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
-
-
-    //public async Task<ApiResponse<bool>> DeleteSavedArticleAsync(int articleId)
-    //{
-    //    try
-    //    {
-    //        var response = await _httpClient.DeleteAsync($"{_config.BaseUrl}/api/news/saved/{articleId}");
-    //        var responseContent = await response.Content.ReadAsStringAsync();
-
-    //        var result = JsonSerializer.Deserialize<ApiResponse<bool>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<bool> { Success = false, Message = "Failed to delete article" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<bool>
     //        {
     //            Success = false,
     //            Message = "Network error occurred",
