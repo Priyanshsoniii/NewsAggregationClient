@@ -39,16 +39,16 @@ public class AdminMenuHandler : IMenuHandler
             switch (choice)
             {
                 case "1":
-                  //  await ViewExternalServersAsync();
+                    await ViewExternalServersAsync();
                     break;
                 case "2":
-                 //   await ViewExternalServerDetailsAsync();
+                    await ViewExternalServerDetailsAsync();
                     break;
                 case "3":
-                 //   await UpdateExternalServerAsync();
+                    await UpdateExternalServerAsync();
                     break;
                 case "4":
-                 //   await AddNewsCategoryAsync();
+                    await AddNewsCategoryAsync();
                     break;
                 case "5":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
@@ -61,185 +61,186 @@ public class AdminMenuHandler : IMenuHandler
         }
     }
 
-    //private async Task UpdateExternalServerAsync()
-    //{
-    //    throw new NotImplementedException();
-    //}
+    private async Task ViewExternalServersAsync()
+    {
+        try
+        {
+            _console.WriteLine("Loading external servers...", ConsoleColor.Yellow);
 
-    //private async Task ViewExternalServersAsync()
-    //{
-    //    try
-    //    {
-    //        _console.WriteLine("Loading external servers...", ConsoleColor.Yellow);
+            var response = await _apiService.GetExternalServersAsync();
 
-    //        var response = await _apiService.GetExternalServersAsync();
+            if (response.Success && response.Data != null)
+            {
+                _displayService.DisplayExternalServers(response.Data);
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to load external servers.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading external servers: {ex.Message}");
+        }
 
-    //        if (response.Success && response.Data != null)
-    //        {
-    //            _displayService.DisplayExternalServers(response.Data);
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to load external servers.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading external servers: {ex.Message}");
-    //    }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+    private async Task ViewExternalServerDetailsAsync()
+    {
+        try
+        {
+            _console.Write("Enter the external server ID: ");
+            var input = _console.ReadLine();
 
-    //private async Task ViewExternalServerDetailsAsync()
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter the external server ID: ");
-    //        var input = _console.ReadLine();
+            if (!int.TryParse(input, out int serverId) || serverId <= 0)
+            {
+                _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (!int.TryParse(input, out int serverId) || serverId <= 0)
-    //        {
-    //            _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            _console.WriteLine("Loading server details...", ConsoleColor.Yellow);
 
-    //        _console.WriteLine("Loading server details...", ConsoleColor.Yellow);
+            var response = await _apiService.GetExternalServerDetailsAsync(serverId);
 
-    //        var response = await _apiService.GetExternalServerDetailsAsync(serverId);
+            if (response.Success && response.Data != null)
+            {
+                _displayService.DisplayExternalServerDetails(response.Data);
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to load server details.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading server details: {ex.Message}");
+        }
 
-    //        if (response.Success && response.Data != null)
-    //        {
-    //            _displayService.DisplayExternalServerDetails(response.Data);
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to load server details.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading server details: {ex.Message}");
-    //    }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+    private async Task UpdateExternalServerAsync()
+    {
+        try
+        {
+            _console.Write("Enter the external server ID: ");
+            var input = _console.ReadLine();
 
-    //private async Task UpdateExternalServerAsync()
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter the external server ID: ");
-    //        var input = _console.ReadLine();
+            if (!int.TryParse(input, out int serverId) || serverId <= 0)
+            {
+                _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (!int.TryParse(input, out int serverId) || serverId <= 0)
-    //        {
-    //            _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            _console.Write("Enter the updated API key: ");
+            var apiKey = _console.ReadLine();
 
-    //        _console.Write("Enter the updated API key: ");
-    //        var apiKey = _console.ReadLine();
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _console.DisplayError("API key cannot be empty.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (string.IsNullOrWhiteSpace(apiKey))
-    //        {
-    //            _console.DisplayError("API key cannot be empty.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            // Validate API key format (basic validation)
+            if (apiKey.Length < 10)
+            {
+                _console.DisplayError("API key seems too short. Please enter a valid API key.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        // Validate API key format (basic validation)
-    //        if (apiKey.Length < 10)
-    //        {
-    //            _console.DisplayError("API key seems too short. Please enter a valid API key.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            _console.WriteLine("Updating server...", ConsoleColor.Yellow);
 
-    //        _console.WriteLine("Updating server...", ConsoleColor.Yellow);
+            var updateRequest = new UpdateExternalServerRequest
+            {
+                ServerId = serverId,
+                ApiKey = apiKey
+            };
 
-    //        var updateRequest = new UpdateExternalServerRequest
-    //        {
-    //            ServerId = serverId,
-    //            ApiKey = apiKey
-    //        };
+            var response = await _apiService.UpdateExternalServerAsync(updateRequest);
 
-    //        var response = await _apiService.UpdateExternalServerAsync(updateRequest);
+            if (response.Success)
+            {
+                _console.DisplaySuccess("Server updated successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to update server.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error updating server: {ex.Message}");
+        }
 
-    //        if (response.Success)
-    //        {
-    //            _console.DisplaySuccess("Server updated successfully!");
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to update server.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error updating server: {ex.Message}");
-    //    }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+    private async Task AddNewsCategoryAsync()
+    {
+        try
+        {
+            _console.Write("Enter new category name: ");
+            var categoryName = _console.ReadLine();
 
-    //private async Task AddNewsCategoryAsync()
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter new category name: ");
-    //        var categoryName = _console.ReadLine();
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                _console.DisplayError("Category name cannot be empty.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (string.IsNullOrWhiteSpace(categoryName))
-    //        {
-    //            _console.DisplayError("Category name cannot be empty.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            // Basic validation for category name  
+            categoryName = categoryName.Trim();
+            if (categoryName.Length < 2)
+            {
+                _console.DisplayError("Category name must be at least 2 characters long.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        // Basic validation for category name  
-    //        categoryName = categoryName.Trim();
-    //        if (categoryName.Length < 2)
-    //        {
-    //            _console.DisplayError("Category name must be at least 2 characters long.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            if (categoryName.Length > 50)
+            {
+                _console.DisplayError("Category name cannot exceed 50 characters.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (categoryName.Length > 50)
-    //        {
-    //            _console.DisplayError("Category name cannot exceed 50 characters.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            // Check for valid characters (letters, numbers, spaces, hyphens)  
+            if (!System.Text.RegularExpressions.Regex.IsMatch(categoryName, @"^[a-zA-Z0-9\s\-]+$"))
+            {
+                _console.DisplayError("Category name can only contain letters, numbers, spaces, and hyphens.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        // Check for valid characters (letters, numbers, spaces, hyphens)  
-    //        if (!System.Text.RegularExpressions.Regex.IsMatch(categoryName, @"^[a-zA-Z0-9\s\-]+$"))
-    //        {
-    //            _console.DisplayError("Category name can only contain letters, numbers, spaces, and hyphens.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            _console.WriteLine("Adding new category...", ConsoleColor.Yellow);
 
-    //        _console.WriteLine("Adding new category...", ConsoleColor.Yellow);
+            var addCategoryRequest = new AddCategoryRequest
+            {
+                CategoryName = categoryName
+            };
 
-    //        var addCategoryRequest = new AddCategoryRequest
-    //        {
-    //            CategoryName = categoryName
-    //        };
+            var response = await _apiService.AddNewsCategoryAsync(addCategoryRequest);
 
-    //        // Fix for CS0815: Explicitly call the method without assigning its return value to a variable  
-    //        await _apiService.AddNewsCategoryAsync(addCategoryRequest);
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Category '{categoryName}' added successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to add category.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error adding category: {ex.Message}");
+        }
 
-    //        _console.DisplaySuccess($"Category '{categoryName}' added successfully!");
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error adding category: {ex.Message}");
-    //    }
-
-    //    _console.PressAnyKeyToContinue();
-    //}
+        _console.PressAnyKeyToContinue();
+    }
 }

@@ -1,7 +1,9 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
 using NewsAggregation.Client.Models.ClientModels;
+using NewsAggregation.Client.Models.ResponseModels;
 using NewsAggregation.Client.Services.Interfaces;
+using NewsAggregationClient.Models.ClientModels;
 
 namespace NewsAggregation.Client.Services;
 
@@ -76,6 +78,36 @@ public class ApiService : IApiService
             Console.WriteLine($"Sign up failed: {await response.Content.ReadAsStringAsync()}");
             return null;
         }
+    }
+
+    Task<ApiResponse<object>> IApiService.AddNewsCategoryAsync(AddCategoryRequest request)
+    {
+        throw new NotImplementedException();
+    }
+
+    Task<ApiResponse<ExternalServerResponse>> IApiService.GetExternalServerDetailsAsync(int serverId)
+    {
+        throw new NotImplementedException();
+    }
+
+    Task<ApiResponse<List<ExternalServerResponse>>> IApiService.GetExternalServersAsync()
+    {
+        throw new NotImplementedException();
+    }
+
+    //Task<TokenResponseDto?> IApiService.LoginAsync(LoginRequest loginRequest)
+    //{
+    //    throw new NotImplementedException();
+    //}
+
+    //Task<TokenResponseDto?> IApiService.RegisterAsync(RegisterRequest registerRequest)
+    //{
+    //    throw new NotImplementedException();
+    //}
+
+    Task<ApiResponse<object>> IApiService.UpdateExternalServerAsync(UpdateExternalServerRequest request)
+    {
+        throw new NotImplementedException();
     }
 
     //public async Task<ApiResponse<UserResponse>> RegisterAsync(RegisterRequest request)

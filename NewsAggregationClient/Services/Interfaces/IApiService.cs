@@ -1,6 +1,5 @@
 ﻿using NewsAggregation.Client.Models.ClientModels;
 using NewsAggregation.Client.Models.ResponseModels;
-using NewsAggregation.Client.UI.MenuHandlers;
 using NewsAggregationClient.Models.ClientModels;
 
 namespace NewsAggregation.Client.Services.Interfaces;
@@ -9,7 +8,11 @@ public interface IApiService
 {
     Task<TokenResponseDto?> LoginAsync(LoginRequest loginRequest);
     Task<TokenResponseDto?> RegisterAsync(RegisterRequest registerRequest);
-  
+    Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync();
+    Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId);
+    Task<ApiResponse<object>> UpdateExternalServerAsync(UpdateExternalServerRequest request);
+    Task<ApiResponse<object>> AddNewsCategoryAsync(AddCategoryRequest request);
+
     //Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null);
     //Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate);
     //Task<ApiResponse<NewsResponse>> SearchNewsAsync(SearchRequest request);
