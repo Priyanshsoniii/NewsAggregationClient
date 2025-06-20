@@ -45,7 +45,7 @@ public class NewsDisplayService : IDisplayService
             _console.WriteLine($"Likes: {article.Likes} | Dislikes: {article.Dislikes}", ConsoleColor.Gray);
         }
 
-        if (article.IsSaved)
+        if(article.IsSaved)
         {
             _console.WriteLine("★ SAVED", ConsoleColor.Green);
         }

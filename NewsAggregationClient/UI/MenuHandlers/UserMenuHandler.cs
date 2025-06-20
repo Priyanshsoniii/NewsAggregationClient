@@ -1,4 +1,5 @@
-﻿using NewsAggregation.Client.Services.Interfaces;
+﻿using NewsAggregation.Client.Models.ResponseModels;
+using NewsAggregation.Client.Services.Interfaces;
 using NewsAggregation.Client.UI.DisplayServices;
 using NewsAggregation.Client.UI.Interfaces;
 
@@ -46,7 +47,7 @@ public class UserMenuHandler : IMenuHandler
                     await HandleHeadlinesAsync(user);
                     break;
                 case "2":
-                  //  await HandleSavedArticlesAsync(user);
+                    await HandleSavedArticlesAsync(user);
                     break;
                 case "3":
                //     await HandleSearchAsync(user);
@@ -78,6 +79,7 @@ public class UserMenuHandler : IMenuHandler
             switch (choice)
             {
                 case "1":
+                    
                     await ShowHeadlinesByDateAsync(user, "today");
                     break;
                 case "2":
@@ -123,7 +125,7 @@ public class UserMenuHandler : IMenuHandler
                 continue;
             }
 
-           // await DisplayNewsArticlesAsync(user, category, fromDate, toDate);
+            await DisplayNewsArticlesAsync(user, category, fromDate, toDate);
             return;
         }
     }
@@ -166,7 +168,6 @@ public class UserMenuHandler : IMenuHandler
                 return;
             }
 
-            // Show category menu for date range
             while (true)
             {
                 _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
@@ -192,7 +193,7 @@ public class UserMenuHandler : IMenuHandler
                     continue;
                 }
 
-               // await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1));
+                await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1));
                 return;
             }
         }
@@ -203,113 +204,148 @@ public class UserMenuHandler : IMenuHandler
         }
     }
 
-    //private async Task DisplayNewsArticlesAsync(UserResponse user, string category, DateTime? fromDate = null, DateTime? toDate = null)
-    //{
-    //    try
-    //    {
-    //        _console.WriteLine("Loading headlines...", ConsoleColor.Yellow);
+    private async Task DisplayNewsArticlesAsync(UserDto user, string category, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        try
+        {
+            _console.WriteLine("Loading headlines...", ConsoleColor.Yellow);
 
-    //        var response = await _apiService.GetHeadlinesAsync(category, fromDate, toDate);
+            var response = await _apiService.GetHeadlinesAsync(category);
 
-    //        if (response.Success && response.Data != null && response.Data.Any())
-    //        {
-    //            while (true)
-    //            {
-    //                _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-    //                _newsDisplay.DisplayHeadlines(response.Data);
-    //                _consoleDisplay.DisplayArticleActionMenu();
+            if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
+            {
+                while (true)
+                {
+                    _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+                    _newsDisplay.DisplayNewsArticles(response.Data.Articles, "Headlines");
+                    _consoleDisplay.DisplayArticleActionMenu();
 
-    //                _console.Write("Enter your choice: ");
-    //                var choice = _console.ReadLine();
+                    _console.Write("Enter your choice: ");
+                    var choice = _console.ReadLine();
 
-    //                switch (choice)
-    //                {
-    //                    case "1":
-    //                        return; // Back
-    //                    case "2":
-    //                        _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-    //                        Environment.Exit(0);
-    //                        break;
-    //                    case "3":
-    //                        await SaveArticleAsync(user);
-    //                        break;
-    //                    default:
-    //                        _console.DisplayError("Invalid choice. Please select 1-3.");
-    //                        _console.PressAnyKeyToContinue();
-    //                        break;
-    //                }
-    //            }
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "No headlines found for the selected criteria.");
-    //            _console.PressAnyKeyToContinue();
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading headlines: {ex.Message}");
-    //        _console.PressAnyKeyToContinue();
-    //    }
-    //}
+                    switch (choice)
+                    {
+                        case "1":
+                            return; // Back
+                        case "2":
+                            _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                            Environment.Exit(0);
+                            break;
+                        case "3":
+                                await SaveArticleAsync(user);
+                            break;
+                        default:
+                            _console.DisplayError("Invalid choice. Please select 1-3.");
+                            _console.PressAnyKeyToContinue();
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "No headlines found for the selected criteria.");
+                _console.PressAnyKeyToContinue();
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading headlines: {ex.Message}");
+            _console.PressAnyKeyToContinue();
+        }
+    }
 
-    //private async Task HandleSavedArticlesAsync(UserResponse user)
-    //{
-    //    try
-    //    {
-    //        _console.WriteLine("Loading saved articles...", ConsoleColor.Yellow);
+    private async Task SaveArticleAsync(UserDto user)
+    {
+        try
+        {
+            _console.Write("Enter Article ID to save: ");
+            var input = _console.ReadLine();
 
-    //        var response = await _apiService.GetSavedArticlesAsync(user.Id);
+            if (!int.TryParse(input, out int articleId) || articleId <= 0)
+            {
+                _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (response.Success && response.Data != null && response.Data.Any())
-    //        {
-    //            while (true)
-    //            {
-    //                _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-    //                _newsDisplay.DisplaySavedArticles(response.Data);
-    //                _consoleDisplay.DisplaySavedArticleActionMenu();
+            _console.WriteLine("Saving article...", ConsoleColor.Yellow);
 
-    //                _console.Write("Enter your choice: ");
-    //                var choice = _console.ReadLine();
+             var response = await _apiService.SaveArticleAsync(user, articleId);
 
-    //                switch (choice)
-    //                {
-    //                    case "1":
-    //                        return; // Back
-    //                    case "2":
-    //                        _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-    //                        Environment.Exit(0);
-    //                        break;
-    //                    case "3":
-    //                        await DeleteSavedArticleAsync(user);
-    //                        // Refresh the saved articles list
-    //                        response = await _apiService.GetSavedArticlesAsync(user.Id);
-    //                        if (!response.Success || response.Data == null || !response.Data.Any())
-    //                        {
-    //                            _console.WriteLine("No more saved articles.", ConsoleColor.Yellow);
-    //                            _console.PressAnyKeyToContinue();
-    //                            return;
-    //                        }
-    //                        break;
-    //                    default:
-    //                        _console.DisplayError("Invalid choice. Please select 1-3.");
-    //                        _console.PressAnyKeyToContinue();
-    //                        break;
-    //                }
-    //            }
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError("No saved articles found.");
-    //            _console.PressAnyKeyToContinue();
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading saved articles: {ex.Message}");
-    //        _console.PressAnyKeyToContinue();
-    //    }
-    //}
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Article {articleId} saved successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to save article.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error saving article: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task HandleSavedArticlesAsync(UserDto user)
+    {
+        try
+        {
+            _console.WriteLine("Loading saved articles...", ConsoleColor.Yellow);
+
+            var response = await _apiService.GetSavedArticlesAsync(user.Id);
+
+            if (response.Success && response.Data != null && response.Data.Any())
+            {
+                while (true)
+                {
+                    _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+                    _newsDisplay.DisplaySavedArticles(response.Data);
+                    _consoleDisplay.DisplaySavedArticleActionMenu();
+
+                    _console.Write("Enter your choice: ");
+                    var choice = _console.ReadLine();
+
+                    switch (choice)
+                    {
+                        case "1":
+                            return; // Back
+                        case "2":
+                            _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                            Environment.Exit(0);
+                            break;
+                        case "3":
+                        //    await DeleteSavedArticleAsync(user);
+                            // Refresh the saved articles list
+                            response = await _apiService.GetSavedArticlesAsync(user.Id);
+                            if (!response.Success || response.Data == null || !response.Data.Any())
+                            {
+                                _console.WriteLine("No more saved articles.", ConsoleColor.Yellow);
+                                _console.PressAnyKeyToContinue();
+                                return;
+                            }
+                            break;
+                        default:
+                            _console.DisplayError("Invalid choice. Please select 1-3.");
+                            _console.PressAnyKeyToContinue();
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                _console.DisplayError("No saved articles found.");
+                _console.PressAnyKeyToContinue();
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading saved articles: {ex.Message}");
+            _console.PressAnyKeyToContinue();
+        }
+    }
 
     //private async Task HandleSearchAsync(UserResponse user)
     //{
@@ -582,41 +618,6 @@ public class UserMenuHandler : IMenuHandler
     //    catch (Exception ex)
     //    {
     //        _console.DisplayError($"Error configuring keywords: {ex.Message}");
-    //    }
-
-    //    _console.PressAnyKeyToContinue();
-    //}
-
-    //private async Task SaveArticleAsync(UserResponse user)
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter Article ID to save: ");
-    //        var input = _console.ReadLine();
-
-    //        if (!int.TryParse(input, out int articleId) || articleId <= 0)
-    //        {
-    //            _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
-
-    //        _console.WriteLine("Saving article...", ConsoleColor.Yellow);
-
-    //        var response = await _apiService.SaveArticleAsync(user.Id, articleId);
-
-    //        if (response.Success)
-    //        {
-    //            _console.DisplaySuccess($"Article {articleId} saved successfully!");
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to save article.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error saving article: {ex.Message}");
     //    }
 
     //    _console.PressAnyKeyToContinue();

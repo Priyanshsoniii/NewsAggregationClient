@@ -13,11 +13,11 @@ public interface IApiService
     Task<ApiResponse<object>> UpdateExternalServerAsync(UpdateExternalServerRequest request);
     Task<ApiResponse<object>> AddNewsCategoryAsync(AddCategoryRequest request);
 
-    //Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null);
-    //Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate);
+    Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null);
+  //  Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate);
     //Task<ApiResponse<NewsResponse>> SearchNewsAsync(SearchRequest request);
-    //Task<ApiResponse<List<NewsArticle>>> GetSavedArticlesAsync();
-    //Task<ApiResponse<bool>> SaveArticleAsync(int articleId);
+    Task<ApiResponse<List<NewsArticle>>> GetSavedArticlesAsync(int userId);
+    Task<ApiResponse<bool>> SaveArticleAsync(UserDto user, int articleId);
     //Task<ApiResponse<bool>> DeleteSavedArticleAsync(int articleId);
     //Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync();
     //Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId);

@@ -80,6 +80,126 @@ public class ApiService : IApiService
         }
     }
 
+    public async Task<ApiResponse<List<NewsArticle>>> GetSavedArticlesAsync(int userId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/News/saved/{userId}");
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            var result = JsonSerializer.Deserialize<ApiResponse<List<NewsArticle>>>(responseContent, _jsonOptions);
+            return result ?? new ApiResponse<List<NewsArticle>> { Success = false, Message = "Failed to fetch saved articles" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<List<NewsArticle>>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null)
+    {
+        try
+        {
+            // Use the correct endpoint
+            var url = "api/News/headlines/today";
+
+            var response = await _httpClient.GetAsync(url);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ApiResponse<NewsResponse>
+                {
+                    Success = false,
+                    Message = $"Failed to fetch headlines: {response.ReasonPhrase}",
+                    Errors = new List<string> { responseContent }
+                };
+            }
+
+            var articles = JsonSerializer.Deserialize<List<NewsArticle>>(responseContent, _jsonOptions) ?? new List<NewsArticle>();
+
+            var newsResponse = new NewsResponse
+            {
+                Articles = articles,
+                TotalCount = articles.Count,
+                Page = 1,
+                PageSize = articles.Count
+            };
+
+            return new ApiResponse<NewsResponse>
+            {
+                Success = true,
+                Message = "Headlines fetched successfully",
+                Data = newsResponse
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<NewsResponse>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<bool>> SaveArticleAsync(UserDto user, int articleId)
+    {
+        try
+        {
+            var content = JsonContent.Create(new
+            {
+                userId = user.Id,
+                articleId = articleId
+            });
+
+            var response = await _httpClient.PostAsync("api/News/saved", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            using var doc = JsonDocument.Parse(responseContent);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("message", out var messageProp))
+            {
+                var message = messageProp.GetString() ?? "Article saved successfully";
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = message,
+                    Data = true
+                };
+            }
+
+            if (bool.TryParse(responseContent, out var saved))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = saved,
+                    Message = saved ? "Article saved successfully" : "Failed to save article",
+                    Data = saved
+                };
+            }
+
+            return new ApiResponse<bool> { Success = false, Message = "Failed to save article" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+
     Task<ApiResponse<object>> IApiService.AddNewsCategoryAsync(AddCategoryRequest request)
     {
         throw new NotImplementedException();
@@ -94,16 +214,6 @@ public class ApiService : IApiService
     {
         throw new NotImplementedException();
     }
-
-    //Task<TokenResponseDto?> IApiService.LoginAsync(LoginRequest loginRequest)
-    //{
-    //    throw new NotImplementedException();
-    //}
-
-    //Task<TokenResponseDto?> IApiService.RegisterAsync(RegisterRequest registerRequest)
-    //{
-    //    throw new NotImplementedException();
-    //}
 
     Task<ApiResponse<object>> IApiService.UpdateExternalServerAsync(UpdateExternalServerRequest request)
     {
@@ -134,32 +244,6 @@ public class ApiService : IApiService
     //    }
     //}
 
-    //public async Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null)
-    //{
-    //    try
-    //    {
-    //        var url = $"{_config.BaseUrl}/api/news/headlines?category={category}";
-    //        if (date.HasValue)
-    //        {
-    //            url += $"&date={date.Value:yyyy-MM-dd}";
-    //        }
-
-    //        var response = await _httpClient.GetAsync(url);
-    //        var responseContent = await response.Content.ReadAsStringAsync();
-
-    //        var result = JsonSerializer.Deserialize<ApiResponse<NewsResponse>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<NewsResponse> { Success = false, Message = "Failed to fetch headlines" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<NewsResponse>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
 
     //public async Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate)
     //{
@@ -208,47 +292,6 @@ public class ApiService : IApiService
     //    }
     //}
 
-    //public async Task<ApiResponse<List<NewsArticle>>> GetSavedArticlesAsync()
-    //{
-    //    try
-    //    {
-    //        var response = await _httpClient.GetAsync($"{_config.BaseUrl}/api/news/saved");
-    //        var responseContent = await response.Content.ReadAsStringAsync();
-
-    //        var result = JsonSerializer.Deserialize<ApiResponse<List<NewsArticle>>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<List<NewsArticle>> { Success = false, Message = "Failed to fetch saved articles" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<List<NewsArticle>>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
-
-    //public async Task<ApiResponse<bool>> SaveArticleAsync(int articleId)
-    //{
-    //    try
-    //    {
-    //        var response = await _httpClient.PostAsync($"{_config.BaseUrl}/api/news/save/{articleId}", null);
-    //        var responseContent = await response.Content.ReadAsStringAsync();
-
-    //        var result = JsonSerializer.Deserialize<ApiResponse<bool>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<bool> { Success = false, Message = "Failed to save article" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<bool>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
 
     //public async Task<ApiResponse<bool>> DeleteSavedArticleAsync(int articleId)
     //{

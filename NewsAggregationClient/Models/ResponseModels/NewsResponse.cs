@@ -11,16 +11,28 @@ public class NewsResponse
 public class NewsArticle
 {
     public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public string Source { get; set; } = string.Empty;
-    public string Url { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string Url { get; set; }
+    public string Source { get; set; }
+    public int CategoryId { get; set; }
     public DateTime PublishedAt { get; set; }
-    public string? Author { get; set; }
-    public string? ImageUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
     public int Likes { get; set; }
     public int Dislikes { get; set; }
-    public bool IsSaved { get; set; }
+    public Category Category { get; set; } // Change from string to Category
+    public List<object> SavedByUsers { get; set; }
+    public bool IsSaved { get; internal set; }
 }
+
+public class Category
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<object> NewsArticles { get; set; }
+    public List<object> UserNotificationSettings { get; set; }
+}
+
