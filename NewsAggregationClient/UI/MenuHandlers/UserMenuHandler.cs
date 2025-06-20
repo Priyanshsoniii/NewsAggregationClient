@@ -289,6 +289,41 @@ public class UserMenuHandler : IMenuHandler
         _console.PressAnyKeyToContinue();
     }
 
+    private async Task DeleteSavedArticleAsync(UserDto user)
+    {
+        try
+        {
+            _console.Write("Enter Article ID to delete: ");
+            var input = _console.ReadLine();
+
+            if (!int.TryParse(input, out int articleId) || articleId <= 0)
+            {
+                _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.WriteLine("Deleting article...", ConsoleColor.Yellow);
+
+            var response = await _apiService.DeleteSavedArticleAsync(user.Id, articleId);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Article {articleId} deleted successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to delete article.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error deleting article: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
     private async Task HandleSavedArticlesAsync(UserDto user)
     {
         try
@@ -317,7 +352,7 @@ public class UserMenuHandler : IMenuHandler
                             Environment.Exit(0);
                             break;
                         case "3":
-                           // await DeleteSavedArticleAsync(user);
+                            await DeleteSavedArticleAsync(user);
                             // Refresh the saved articles list
                             response = await _apiService.GetSavedArticlesAsync(user.Id);
                             if (!response.Success || response.Data == null || !response.Data.Any())
@@ -618,41 +653,6 @@ public class UserMenuHandler : IMenuHandler
     //    catch (Exception ex)
     //    {
     //        _console.DisplayError($"Error configuring keywords: {ex.Message}");
-    //    }
-
-    //    _console.PressAnyKeyToContinue();
-    //}
-
-    //private async Task DeleteSavedArticleAsync(UserResponse user)
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter Article ID to delete: ");
-    //        var input = _console.ReadLine();
-
-    //        if (!int.TryParse(input, out int articleId) || articleId <= 0)
-    //        {
-    //            _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
-
-    //        _console.WriteLine("Deleting article...", ConsoleColor.Yellow);
-
-    //        var response = await _apiService.DeleteSavedArticleAsync(user.Id, articleId);
-
-    //        if (response.Success)
-    //        {
-    //            _console.DisplaySuccess($"Article {articleId} deleted successfully!");
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to delete article.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error deleting article: {ex.Message}");
     //    }
 
     //    _console.PressAnyKeyToContinue();

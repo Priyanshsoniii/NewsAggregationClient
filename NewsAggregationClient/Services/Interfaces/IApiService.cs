@@ -8,17 +8,17 @@ public interface IApiService
 {
     Task<TokenResponseDto?> LoginAsync(LoginRequest loginRequest);
     Task<TokenResponseDto?> RegisterAsync(RegisterRequest registerRequest);
-    Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync();
-    Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId);
-    Task<ApiResponse<object>> UpdateExternalServerAsync(UpdateExternalServerRequest request);
-    Task<ApiResponse<object>> AddNewsCategoryAsync(AddCategoryRequest request);
+  //  Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync();
+  //  Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId);
+   // Task<ApiResponse<object>> UpdateExternalServerAsync(UpdateExternalServerRequest request);
+  //  Task<ApiResponse<object>> AddNewsCategoryAsync(AddCategoryRequest request);
 
     Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null);
   //  Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate);
     //Task<ApiResponse<NewsResponse>> SearchNewsAsync(SearchRequest request);
     Task<ApiResponse<List<NewsArticle>>> GetSavedArticlesAsync(int userId);
     Task<ApiResponse<bool>> SaveArticleAsync(UserDto user, int articleId);
-    //Task<ApiResponse<bool>> DeleteSavedArticleAsync(int articleId);
+    Task<ApiResponse<bool>> DeleteSavedArticleAsync(int userId, int articleId);
     //Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync();
     //Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId);
     //Task<ApiResponse<bool>> UpdateExternalServerAsync(int serverId, string apiKey);

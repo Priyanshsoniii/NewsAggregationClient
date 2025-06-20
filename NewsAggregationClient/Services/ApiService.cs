@@ -205,15 +205,43 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<ApiResponse<bool>> DeleteSavedArticleAsync(int articleId)
-    {
+    public async Task<ApiResponse<bool>> DeleteSavedArticleAsync(int userId, int articleId)
+    {   
         try
         {
-            var response = await _httpClient.DeleteAsync($"{_config.BaseUrl}/api/news/saved/{articleId}");
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/News/saved")
+            {
+                Content = JsonContent.Create(new { userId, articleId })
+            };
+
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<ApiResponse<bool>>(responseContent, _jsonOptions);
-            return result ?? new ApiResponse<bool> { Success = false, Message = "Failed to delete article" };
+            using var doc = JsonDocument.Parse(responseContent);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("message", out var messageProp))
+            {
+                var message = messageProp.GetString() ?? "Article deleted successfully";
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = message,
+                    Data = true
+                };
+            }
+
+            if (bool.TryParse(responseContent, out var deleted))
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = deleted,
+                    Message = deleted ? "Article deleted successfully" : "Failed to delete article",
+                    Data = deleted
+                };
+            }
+
+            return new ApiResponse<bool> { Success = false, Message = "Failed to delete article" };
         }
         catch (Exception ex)
         {
@@ -225,50 +253,6 @@ public class ApiService : IApiService
             };
         }
     }
-    Task<ApiResponse<object>> IApiService.AddNewsCategoryAsync(AddCategoryRequest request)
-    {
-        throw new NotImplementedException();
-    }
-
-    Task<ApiResponse<ExternalServerResponse>> IApiService.GetExternalServerDetailsAsync(int serverId)
-    {
-        throw new NotImplementedException();
-    }
-
-    Task<ApiResponse<List<ExternalServerResponse>>> IApiService.GetExternalServersAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-    Task<ApiResponse<object>> IApiService.UpdateExternalServerAsync(UpdateExternalServerRequest request)
-    {
-        throw new NotImplementedException();
-    }
-
-    //public async Task<ApiResponse<UserResponse>> RegisterAsync(RegisterRequest request)
-    //{
-    //    try
-    //    {
-    //        var json = JsonSerializer.Serialize(request, _jsonOptions);
-    //        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-    //        var response = await _httpClient.PostAsync($"{_config.BaseUrl}/api/auth/register", content);
-    //        var responseContent = await response.Content.ReadAsStringAsync();
-
-    //        var result = JsonSerializer.Deserialize<ApiResponse<UserResponse>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<UserResponse> { Success = false, Message = "Registration failed" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<UserResponse>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
-
 
     //public async Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate)
     //{
