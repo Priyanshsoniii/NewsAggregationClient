@@ -1,5 +1,6 @@
 ﻿using NewsAggregation.Client.Models.ClientModels;
 using NewsAggregation.Client.Services.Interfaces;
+using NewsAggregation.Client.UI.Validators;
 
 namespace NewsAggregation.Client.UI.MenuHandlers;
 
@@ -14,15 +15,20 @@ public class AuthMenuHandler(IConsoleService console, IApiService apiService, Ad
     {
         _console.DisplayHeader("User Login");
 
-        _console.Write("Username: ");
-        var username = _console.ReadLine();
+        _console.Write("Email: ");
+        var email = _console.ReadLine();
+        if (!InputValidator.IsValidEmail(email))
+        {
+            _console.DisplayError(InputValidator.GetEmailValidationMessage());
+            _console.PressAnyKeyToContinue();
+            return;
+        }
 
         _console.Write("Password: ");
         var password = _console.ReadPassword();
-
-        if (string.IsNullOrWhiteSpace(password))
+        if (!InputValidator.IsValidPassword(password))
         {
-            _console.DisplayError("Password cannot be empty.");
+            _console.DisplayError(InputValidator.GetPasswordValidationMessage());
             _console.PressAnyKeyToContinue();
             return;
         }
@@ -31,13 +37,13 @@ public class AuthMenuHandler(IConsoleService console, IApiService apiService, Ad
 
         var loginRequest = new LoginRequest
         {
-            Username = username,
+            Email = email,
             Password = password
         };
 
         var response = await _apiService.LoginAsync(loginRequest);
 
-        if (response!= null && response.User != null)
+        if (response != null && response.User != null)
         {
             _console.DisplaySuccess("Login successful!");
             _console.PressAnyKeyToContinue();
@@ -53,11 +59,7 @@ public class AuthMenuHandler(IConsoleService console, IApiService apiService, Ad
         }
         else
         {
-            _console.DisplayError(response.Message);
-            if (response.Message.Any())
-            {
-                _console.DisplayError(response.Message);
-            }
+            _console.DisplayError(response?.Message ?? "Login failed. Please check your credentials.");
             _console.PressAnyKeyToContinue();
         }
     }
@@ -68,16 +70,33 @@ public class AuthMenuHandler(IConsoleService console, IApiService apiService, Ad
 
         _console.Write("Username: ");
         var username = _console.ReadLine();
+        if (!InputValidator.IsValidUsername(username))
+        {
+            _console.DisplayError(InputValidator.GetUsernameValidationMessage());
+            _console.PressAnyKeyToContinue();
+            return;
+        }
 
         _console.Write("Email: ");
         var email = _console.ReadLine();
+        if (!InputValidator.IsValidEmail(email))
+        {
+            _console.DisplayError(InputValidator.GetEmailValidationMessage());
+            _console.PressAnyKeyToContinue();
+            return;
+        }
 
         _console.Write("Password: ");
         var password = _console.ReadPassword();
+        if (!InputValidator.IsValidPassword(password))
+        {
+            _console.DisplayError(InputValidator.GetPasswordValidationMessage());
+            _console.PressAnyKeyToContinue();
+            return;
+        }
 
         _console.Write("Confirm Password: ");
         var confirmPassword = _console.ReadPassword();
-
         if (password != confirmPassword)
         {
             _console.DisplayError("Passwords do not match.");
@@ -95,7 +114,16 @@ public class AuthMenuHandler(IConsoleService console, IApiService apiService, Ad
         };
 
         var response = await _apiService.RegisterAsync(registerRequest);
-    
-       // await _userHandler.HandleMenuAsync(response.User);
+        if (response != null && response.User != null)
+        {
+            _console.DisplaySuccess("Sign up successful! Logging you in...");
+            _console.PressAnyKeyToContinue();
+            await _userHandler.HandleMenuAsync(response.User);
+        }
+        else
+        {
+            _console.DisplayError(response?.Message ?? "Sign up failed. Please try again.");
+            _console.PressAnyKeyToContinue();
+        }
     }
 }

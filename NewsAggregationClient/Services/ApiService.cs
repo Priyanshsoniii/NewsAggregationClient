@@ -4,6 +4,8 @@ using NewsAggregation.Client.Models.ClientModels;
 using NewsAggregation.Client.Models.ResponseModels;
 using NewsAggregation.Client.Services.Interfaces;
 using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Models.DTOs.ResponseDTOs;
+using System.Text;
 
 namespace NewsAggregation.Client.Services;
 
@@ -11,6 +13,7 @@ public class ApiService : IApiService
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
+    private string? _jwtToken;
 
     public ApiService(HttpClient httpClient)
     {
@@ -22,11 +25,24 @@ public class ApiService : IApiService
         };
     }
 
+    public void SetJwtToken(string token)
+    {
+        _jwtToken = token;
+        if (!string.IsNullOrEmpty(token))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+        else
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+        }
+    }
+
     public async Task<TokenResponseDto?> LoginAsync(LoginRequest loginRequest)
     {
         var user = new UserLoginDto
         {
-            Username = loginRequest.Username,
+            Email = loginRequest.Email,
             Password = loginRequest.Password
         };
 
@@ -35,6 +51,10 @@ public class ApiService : IApiService
         if (response.IsSuccessStatusCode)
         {
             var token = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
+            if (!string.IsNullOrEmpty(token?.Token))
+            {
+                SetJwtToken(token.Token);
+            }
             if (token?.User != null)
             {
                 Console.WriteLine($"Login successful. Welcome, {token.User.Username} ({token.User.Role})");
@@ -54,7 +74,6 @@ public class ApiService : IApiService
 
     public async Task<TokenResponseDto?> RegisterAsync(RegisterRequest registerRequest)
     {
-
         var user = new UserRegisterDto
         {
             Email = registerRequest.Email,
@@ -67,6 +86,10 @@ public class ApiService : IApiService
         if (response.IsSuccessStatusCode)
         {
             var token = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
+            if (!string.IsNullOrEmpty(token?.Token))
+            {
+                SetJwtToken(token.Token);
+            }
             if (token?.Message == "User registered successfully")
             {
                 Console.WriteLine($"Sign up successful. Welcome)");
@@ -301,97 +324,145 @@ public class ApiService : IApiService
     //    }
     //}
 
-    //public async Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync()
-    //{
-    //    try
-    //    {
-    //        var response = await _httpClient.GetAsync($"{_config.BaseUrl}/api/admin/external-servers");
-    //        var responseContent = await response.Content.ReadAsStringAsync();
+    public async Task<ApiResponse<List<ExternalServerResponseDto>>> GetExternalServersAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("api/Admin/servers");
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-    //        var result = JsonSerializer.Deserialize<ApiResponse<List<ExternalServerResponse>>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<List<ExternalServerResponse>> { Success = false, Message = "Failed to fetch external servers" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<List<ExternalServerResponse>>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
+            var result = JsonSerializer.Deserialize<ApiResponse<List<ExternalServerResponseDto>>>(responseContent, _jsonOptions);
+            bool foundServers = false;
+            List<ExternalServerResponseDto>? servers = null;
+            using (var doc = JsonDocument.Parse(responseContent))
+            {
+                if (doc.RootElement.TryGetProperty("servers", out var serversElement) && serversElement.ValueKind == JsonValueKind.Array)
+                {
+                    servers = JsonSerializer.Deserialize<List<ExternalServerResponseDto>>(serversElement.GetRawText(), _jsonOptions);
+                    foundServers = servers != null && servers.Count > 0;
+                }
+            }
+            if (foundServers)
+            {
+                return new ApiResponse<List<ExternalServerResponseDto>>
+                {
+                    Success = true,
+                    Message = "External servers retrieved successfully",
+                    Data = servers
+                };
+            }
+            return result ?? new ApiResponse<List<ExternalServerResponseDto>> { Success = false, Message = "Failed to fetch external servers" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<List<ExternalServerResponseDto>>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
 
-    //public async Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId)
-    //{
-    //    try
-    //    {
-    //        var response = await _httpClient.GetAsync($"{_config.BaseUrl}/api/admin/external-servers/{serverId}");
-    //        var responseContent = await response.Content.ReadAsStringAsync();
+    public async Task<ApiResponse<ExternalServerResponseDto>> GetExternalServerDetailsAsync(int serverId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/Admin/servers/{serverId}");
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-    //        var result = JsonSerializer.Deserialize<ApiResponse<ExternalServerResponse>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<ExternalServerResponse> { Success = false, Message = "Failed to fetch server details" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<ExternalServerResponse>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
+            var result = JsonSerializer.Deserialize<ApiResponse<ExternalServerResponseDto>>(responseContent, _jsonOptions);
+            // Fallback: try to extract 'server' property if present
+            using (var doc = JsonDocument.Parse(responseContent))
+            {
+                if (doc.RootElement.TryGetProperty("server", out var serverElement) && serverElement.ValueKind == JsonValueKind.Object)
+                {
+                    var server = JsonSerializer.Deserialize<ExternalServerResponseDto>(serverElement.GetRawText(), _jsonOptions);
+                    return new ApiResponse<ExternalServerResponseDto>
+                    {
+                        Success = true,
+                        Message = "Server details retrieved successfully",
+                        Data = server
+                    };
+                }
+            }
+            return result ?? new ApiResponse<ExternalServerResponseDto> { Success = false, Message = "Failed to fetch server details" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<ExternalServerResponseDto>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
 
-    //public async Task<ApiResponse<bool>> UpdateExternalServerAsync(int serverId, string apiKey)
-    //{
-    //    try
-    //    {
-    //        var request = new { ApiKey = apiKey };
-    //        var json = JsonSerializer.Serialize(request, _jsonOptions);
-    //        var content = new StringContent(json, Encoding.UTF8, "application/json");
+    public async Task<ApiResponse<bool>> UpdateExternalServerAsync(int serverId, string apiKey)
+    {
+        try
+        {
+            var request = new { ApiKey = apiKey };
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-    //        var response = await _httpClient.PutAsync($"{_config.BaseUrl}/api/admin/external-servers/{serverId}", content);
-    //        var responseContent = await response.Content.ReadAsStringAsync();
+            var response = await _httpClient.PutAsync($"api/Admin/servers/{serverId}", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-    //        var result = JsonSerializer.Deserialize<ApiResponse<bool>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<bool> { Success = false, Message = "Failed to update server" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<bool>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
+            // Accept both { success, message, data } and { message, server }
+            using (var doc = JsonDocument.Parse(responseContent))
+            {
+                if (doc.RootElement.TryGetProperty("message", out var msgProp) &&
+                    msgProp.GetString()?.ToLower().Contains("updated") == true)
+                {
+                    return new ApiResponse<bool> { Success = true, Message = msgProp.GetString() ?? "Server updated successfully", Data = true };
+                }
+            }
+            return new ApiResponse<bool> { Success = false, Message = "Failed to update server" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
 
-    //public async Task<ApiResponse<bool>> AddNewsCategoryAsync(string categoryName)
-    //{
-    //    try
-    //    {
-    //        var request = new { Name = categoryName };
-    //        var json = JsonSerializer.Serialize(request, _jsonOptions);
-    //        var content = new StringContent(json, Encoding.UTF8, "application/json");
+    public async Task<ApiResponse<bool>> AddNewsCategoryAsync(string categoryName, string description)
+    {
+        try
+        {
+            var request = new { Name = categoryName, Description = description };
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-    //        var response = await _httpClient.PostAsync($"{_config.BaseUrl}/api/admin/categories", content);
-    //        var responseContent = await response.Content.ReadAsStringAsync();
+            var response = await _httpClient.PostAsync("api/Admin/categories", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-    //        var result = JsonSerializer.Deserialize<ApiResponse<bool>>(responseContent, _jsonOptions);
-    //        return result ?? new ApiResponse<bool> { Success = false, Message = "Failed to add category" };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponse<bool>
-    //        {
-    //            Success = false,
-    //            Message = "Network error occurred",
-    //            Errors = new List<string> { ex.Message }
-    //        };
-    //    }
-    //}
+            using (var doc = JsonDocument.Parse(responseContent))
+            {
+                if (doc.RootElement.TryGetProperty("message", out var msgProp) &&
+                    msgProp.GetString()?.ToLower().Contains("created") == true)
+                {
+                    return new ApiResponse<bool> { Success = true, Message = msgProp.GetString() ?? "Category added successfully", Data = true };
+                }
+            }
+            return new ApiResponse<bool> { Success = false, Message = "Failed to add category" };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
 
     //public async Task<ApiResponse<NotificationSettings>> GetNotificationSettingsAsync()
     //{

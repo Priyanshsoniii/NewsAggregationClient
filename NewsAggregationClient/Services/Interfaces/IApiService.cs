@@ -1,6 +1,7 @@
 ﻿using NewsAggregation.Client.Models.ClientModels;
 using NewsAggregation.Client.Models.ResponseModels;
 using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Models.DTOs.ResponseDTOs;
 
 namespace NewsAggregation.Client.Services.Interfaces;
 
@@ -20,9 +21,9 @@ public interface IApiService
     Task<ApiResponse<bool>> SaveArticleAsync(UserDto user, int articleId);
     Task<ApiResponse<bool>> DeleteSavedArticleAsync(int userId, int articleId);
     //Task<ApiResponse<List<ExternalServerResponse>>> GetExternalServersAsync();
-    //Task<ApiResponse<ExternalServerResponse>> GetExternalServerDetailsAsync(int serverId);
-    //Task<ApiResponse<bool>> UpdateExternalServerAsync(int serverId, string apiKey);
-    //Task<ApiResponse<bool>> AddNewsCategoryAsync(string categoryName);
+    Task<ApiResponse<ExternalServerResponseDto>> GetExternalServerDetailsAsync(int serverId);
+    Task<ApiResponse<bool>> UpdateExternalServerAsync(int serverId, string apiKey);
+    Task<ApiResponse<bool>> AddNewsCategoryAsync(string categoryName, string description);
     //Task<ApiResponse<NotificationSettings>> GetNotificationSettingsAsync();
     //Task<ApiResponse<bool>> UpdateNotificationSettingsAsync(NotificationSettings settings);
     //Task<ApiResponse<List<NotificationResponse>>> GetNotificationsAsync();
@@ -31,4 +32,5 @@ public interface IApiService
     //Task<bool> ValidateTokenAsync();
     //Task AddNewsCategoryAsync(AddCategoryRequest addCategoryRequest);
     //Task UpdateExternalServerAsync(UpdateExternalServerRequest updateRequest);
+    Task<ApiResponse<List<ExternalServerResponseDto>>> GetExternalServersAsync();
 }

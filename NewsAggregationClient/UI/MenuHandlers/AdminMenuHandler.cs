@@ -39,16 +39,16 @@ public class AdminMenuHandler : IMenuHandler
             switch (choice)
             {
                 case "1":
-                 //   await ViewExternalServersAsync();
+                    await ViewExternalServersAsync();
                     break;
                 case "2":
-                 //   await ViewExternalServerDetailsAsync();
+                    await ViewExternalServerDetailsAsync();
                     break;
                 case "3":
-                 //   await UpdateExternalServerAsync();
+                    await UpdateExternalServerAsync();
                     break;
                 case "4":
-                 //   await AddNewsCategoryAsync();
+                    await AddNewsCategoryAsync();
                     break;
                 case "5":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
@@ -61,186 +61,210 @@ public class AdminMenuHandler : IMenuHandler
         }
     }
 
-    //private async Task ViewExternalServersAsync()
-    //{
-    //    try
-    //    {
-    //        _console.WriteLine("Loading external servers...", ConsoleColor.Yellow);
+    private async Task ViewExternalServersAsync()
+    {
+        try
+        {
+            _console.WriteLine("Loading external servers...", ConsoleColor.Yellow);
+            var response = await _apiService.GetExternalServersAsync();
+            if (response.Success && response.Data != null && response.Data.Count > 0)
+            {
+                _console.WriteLine($"\nList of external servers (count: {response.Data.Count}):", ConsoleColor.Cyan);
+                foreach (var server in response.Data)
+                {
+                    _console.WriteLine($"{server.Id}. {server.Name} - {server.Status} - last accessed: {server.LastAccessed}", ConsoleColor.White);
+                }
+            }
+            else
+            {
+                _console.DisplayError($"No external servers found or unable to parse data. Raw message: {response.Message}");
+                if (response.Data != null)
+                {
+                    _console.WriteLine($"[DEBUG] Data count: {response.Data.Count}", ConsoleColor.Yellow);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading external servers: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //        var response = await _apiService.GetExternalServersAsync();
+    private async Task ViewExternalServerDetailsAsync()
+    {
+        try
+        {
+            // First, show a summary list of all servers and their API keys (masked)
+            var allServersResponse = await _apiService.GetExternalServersAsync();
+            if (allServersResponse.Success && allServersResponse.Data != null && allServersResponse.Data.Count > 0)
+            {
+                _console.WriteLine("\nList of external server details:", ConsoleColor.Cyan);
+                foreach (var server in allServersResponse.Data)
+                {
+                    var apiKeyDisplay = server.ApiUrl != null ? $"<API KEY: ****{(server.ApiUrl.Length > 4 ? server.ApiUrl[^4..] : server.ApiUrl)}>": "<API KEY: N/A>";
+                    _console.WriteLine($"{server.Id}. {server.Name} - {apiKeyDisplay}", ConsoleColor.White);
+                }
+            }
+            else
+            {
+                _console.DisplayError("No external servers found.");
+            }
 
-    //        if (response.Success && response.Data != null)
-    //        {
-    //            _displayService.DisplayExternalServers(response.Data);
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to load external servers.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading external servers: {ex.Message}");
-    //    }
+            // Then, allow the user to select a server for full details
+            _console.Write("\nEnter the external server ID to view full details: ");
+            var input = _console.ReadLine();
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+            if (!int.TryParse(input, out int serverId) || serverId <= 0)
+            {
+                _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //private async Task ViewExternalServerDetailsAsync()
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter the external server ID: ");
-    //        var input = _console.ReadLine();
+            _console.WriteLine("Loading server details...", ConsoleColor.Yellow);
 
-    //        if (!int.TryParse(input, out int serverId) || serverId <= 0)
-    //        {
-    //            _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            var response = await _apiService.GetExternalServerDetailsAsync(serverId);
 
-    //        _console.WriteLine("Loading server details...", ConsoleColor.Yellow);
+            if (response.Success && response.Data != null)
+            {
+                var server = response.Data;
+                _console.WriteLine($"\nServer Details:", ConsoleColor.Cyan);
+                _console.WriteLine($"ID: {server.Id}", ConsoleColor.White);
+                _console.WriteLine($"Name: {server.Name}", ConsoleColor.White);
+                _console.WriteLine($"Type: {server.ServerType}", ConsoleColor.White);
+                _console.WriteLine($"Status: {server.Status}", ConsoleColor.White);
+                _console.WriteLine($"Last Accessed: {server.LastAccessed}", ConsoleColor.White);
+                _console.WriteLine($"API URL: {server.ApiUrl}", ConsoleColor.White);
+                _console.WriteLine($"Requests Per Hour: {server.RequestsPerHour}", ConsoleColor.White);
+                _console.WriteLine($"Current Hour Requests: {server.CurrentHourRequests}", ConsoleColor.White);
+                _console.WriteLine($"Created At: {server.CreatedAt}", ConsoleColor.White);
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to load server details.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading server details: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //        var response = await _apiService.GetExternalServerDetailsAsync(serverId);
+    private async Task UpdateExternalServerAsync()
+    {
+        try
+        {
+            _console.Write("Enter the external server ID: ");
+            var input = _console.ReadLine();
 
-    //        if (response.Success && response.Data != null)
-    //        {
-    //            _displayService.DisplayExternalServerDetails(response.Data);
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to load server details.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading server details: {ex.Message}");
-    //    }
+            if (!int.TryParse(input, out int serverId) || serverId <= 0)
+            {
+                _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+            _console.Write("Enter the updated API key: ");
+            var apiKey = _console.ReadLine();
 
-    //private async Task UpdateExternalServerAsync()
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter the external server ID: ");
-    //        var input = _console.ReadLine();
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _console.DisplayError("API key cannot be empty.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (!int.TryParse(input, out int serverId) || serverId <= 0)
-    //        {
-    //            _console.DisplayError("Invalid server ID. Please enter a valid positive number.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            if (apiKey.Length < 10)
+            {
+                _console.DisplayError("API key seems too short. Please enter a valid API key.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        _console.Write("Enter the updated API key: ");
-    //        var apiKey = _console.ReadLine();
+            _console.WriteLine("Updating server...", ConsoleColor.Yellow);
 
-    //        if (string.IsNullOrWhiteSpace(apiKey))
-    //        {
-    //            _console.DisplayError("API key cannot be empty.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            var response = await _apiService.UpdateExternalServerAsync(serverId, apiKey);
 
-    //        // Validate API key format (basic validation)
-    //        if (apiKey.Length < 10)
-    //        {
-    //            _console.DisplayError("API key seems too short. Please enter a valid API key.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            if (response.Success)
+            {
+                _console.DisplaySuccess("Server updated successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to update server.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error updating server: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //        _console.WriteLine("Updating server...", ConsoleColor.Yellow);
+    private async Task AddNewsCategoryAsync()
+    {
+        try
+        {
+            _console.Write("Enter new category name: ");
+            var categoryName = _console.ReadLine();
 
-    //        var updateRequest = new UpdateExternalServerRequest
-    //        {
-    //            ServerId = serverId,
-    //            ApiKey = apiKey
-    //        };
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                _console.DisplayError("Category name cannot be empty.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        var response = await _apiService.UpdateExternalServerAsync(updateRequest);
+            categoryName = categoryName.Trim();
+            if (categoryName.Length < 2)
+            {
+                _console.DisplayError("Category name must be at least 2 characters long.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (response.Success)
-    //        {
-    //            _console.DisplaySuccess("Server updated successfully!");
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to update server.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error updating server: {ex.Message}");
-    //    }
+            if (categoryName.Length > 50)
+            {
+                _console.DisplayError("Category name cannot exceed 50 characters.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+            if (!System.Text.RegularExpressions.Regex.IsMatch(categoryName, @"^[a-zA-Z0-9\s\-]+$"))
+            {
+                _console.DisplayError("Category name can only contain letters, numbers, spaces, and hyphens.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //private async Task AddNewsCategoryAsync()
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter new category name: ");
-    //        var categoryName = _console.ReadLine();
+            _console.Write("Enter category description (optional): ");
+            var description = _console.ReadLine() ?? string.Empty;
+            if (description.Length > 255)
+            {
+                _console.DisplayError("Description cannot exceed 255 characters.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        if (string.IsNullOrWhiteSpace(categoryName))
-    //        {
-    //            _console.DisplayError("Category name cannot be empty.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            _console.WriteLine("Adding new category...", ConsoleColor.Yellow);
 
-    //        // Basic validation for category name  
-    //        categoryName = categoryName.Trim();
-    //        if (categoryName.Length < 2)
-    //        {
-    //            _console.DisplayError("Category name must be at least 2 characters long.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            var response = await _apiService.AddNewsCategoryAsync(categoryName, description);
 
-    //        if (categoryName.Length > 50)
-    //        {
-    //            _console.DisplayError("Category name cannot exceed 50 characters.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
-
-    //        // Check for valid characters (letters, numbers, spaces, hyphens)  
-    //        if (!System.Text.RegularExpressions.Regex.IsMatch(categoryName, @"^[a-zA-Z0-9\s\-]+$"))
-    //        {
-    //            _console.DisplayError("Category name can only contain letters, numbers, spaces, and hyphens.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
-
-    //        _console.WriteLine("Adding new category...", ConsoleColor.Yellow);
-
-    //        var addCategoryRequest = new AddCategoryRequest
-    //        {
-    //            CategoryName = categoryName
-    //        };
-
-    //        var response = await _apiService.AddNewsCategoryAsync(addCategoryRequest);
-
-    //        if (response.Success)
-    //        {
-    //            _console.DisplaySuccess($"Category '{categoryName}' added successfully!");
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to add category.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error adding category: {ex.Message}");
-    //    }
-
-    //    _console.PressAnyKeyToContinue();
-    //}
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Category '{categoryName}' added successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to add category.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error adding category: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
 }
