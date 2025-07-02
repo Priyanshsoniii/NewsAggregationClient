@@ -53,7 +53,7 @@ public class NewsDisplayService : IDisplayService
         _console.WriteLine("");
     }
 
-    public void DisplaySavedArticles(List<NewsArticle> articles)
+    public void DisplaySavedArticles(List<SavedArticle> articles)
     {
         _console.DisplayHeader("S A V E D   A R T I C L E S");
 
@@ -65,9 +65,28 @@ public class NewsDisplayService : IDisplayService
 
         foreach (var article in articles)
         {
-            DisplayNewsArticle(article);
+            DisplaySavedArticle(article);
             _console.DisplaySeparator();
         }
+    }
+
+    public void DisplaySavedArticle(SavedArticle article)
+    {
+        _console.WriteLine($"ID: {article.Id}", ConsoleColor.Cyan);
+        _console.WriteLine($"Title: {TruncateText(article.Title, 80)}", ConsoleColor.White);
+        _console.WriteLine($"Description: {TruncateText(article.Description, 100)}", ConsoleColor.Gray);
+        _console.WriteLine($"Source: {article.Source}", ConsoleColor.Green);
+        _console.WriteLine($"URL: {article.Url}", ConsoleColor.Blue);
+        _console.WriteLine($"Category: {article.CategoryName}", ConsoleColor.Magenta);
+        _console.WriteLine($"Published: {article.PublishedAt:yyyy-MM-dd HH:mm}", ConsoleColor.Yellow);
+
+        if (article.Likes > 0 || article.Dislikes > 0)
+        {
+            _console.WriteLine($"Likes: {article.Likes} | Dislikes: {article.Dislikes}", ConsoleColor.Gray);
+        }
+
+        _console.WriteLine("★ SAVED", ConsoleColor.Green);
+        _console.WriteLine("");
     }
 
     public void DisplaySearchResults(List<NewsArticle> articles, string query)

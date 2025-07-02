@@ -1,7 +1,9 @@
 ﻿using NewsAggregation.Client.Models.ResponseModels;
+using NewsAggregation.Client.Models.ClientModels;
 using NewsAggregation.Client.Services.Interfaces;
 using NewsAggregation.Client.UI.DisplayServices;
 using NewsAggregation.Client.UI.Interfaces;
+using NewsAggregationClient.Models.ResponseModels;
 
 namespace NewsAggregation.Client.UI.MenuHandlers;
 
@@ -47,19 +49,22 @@ public class UserMenuHandler : IMenuHandler
                     await HandleHeadlinesAsync(user);
                     break;
                 case "2":
-                    await HandleSavedArticlesAsync(user);
+                    await HandlePersonalizedHeadlinesAsync(user);
                     break;
                 case "3":
-               //     await HandleSearchAsync(user);
+                    await HandleSavedArticlesAsync(user);
                     break;
                 case "4":
-                //    await HandleNotificationsAsync(user);
+                    await HandleSearchAsync(user);
                     break;
                 case "5":
+                    await HandleNotificationsAsync(user);
+                    break;
+                case "6":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                     return;
                 default:
-                    _console.DisplayError("Invalid choice. Please select 1-5.");
+                    _console.DisplayError("Invalid choice. Please select 1-6.");
                     _console.PressAnyKeyToContinue();
                     break;
             }
@@ -100,31 +105,30 @@ public class UserMenuHandler : IMenuHandler
         DateTime? fromDate = dateOption == "today" ? DateTime.Today : null;
         DateTime? toDate = dateOption == "today" ? DateTime.Today.AddDays(1).AddSeconds(-1) : null;
 
+        var categories = await _apiService.GetCategoriesAsync();
+        if (categories == null || categories.Count == 0)
+        {
+            _console.DisplayError("No categories available.");
+            _console.PressAnyKeyToContinue();
+            return;
+        }
+
         while (true)
         {
             _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-            _consoleDisplay.DisplayCategoryMenu();
+            _consoleDisplay.DisplayCategoryMenu(categories);
 
             _console.Write("Enter your choice: ");
             var choice = _console.ReadLine();
 
-            string category = choice switch
+            if (!int.TryParse(choice, out int index) || index < 1 || index > categories.Count)
             {
-                "1" => "all",
-                "2" => "business",
-                "3" => "entertainment",
-                "4" => "sports",
-                "5" => "technology",
-                _ => null
-            };
-
-            if (category == null)
-            {
-                _console.DisplayError("Invalid choice. Please select 1-5.");
+                _console.DisplayError($"Invalid choice. Please select 1-{categories.Count}.");
                 _console.PressAnyKeyToContinue();
                 continue;
             }
 
+            var category = categories[index - 1].Name.ToLower();
             await DisplayNewsArticlesAsync(user, category, fromDate, toDate);
             return;
         }
@@ -168,31 +172,30 @@ public class UserMenuHandler : IMenuHandler
                 return;
             }
 
+            var categories = await _apiService.GetCategoriesAsync();
+            if (categories == null || categories.Count == 0)
+            {
+                _console.DisplayError("No categories available.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
             while (true)
             {
                 _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-                _consoleDisplay.DisplayCategoryMenu();
+                _consoleDisplay.DisplayCategoryMenu(categories);
 
                 _console.Write("Enter your choice: ");
                 var choice = _console.ReadLine();
 
-                string category = choice switch
+                if (!int.TryParse(choice, out int index) || index < 1 || index > categories.Count)
                 {
-                    "1" => "all",
-                    "2" => "business",
-                    "3" => "entertainment",
-                    "4" => "sports",
-                    "5" => "technology",
-                    _ => null
-                };
-
-                if (category == null)
-                {
-                    _console.DisplayError("Invalid choice. Please select 1-5.");
+                    _console.DisplayError($"Invalid choice. Please select 1-{categories.Count}.");
                     _console.PressAnyKeyToContinue();
                     continue;
                 }
 
+                var category = categories[index - 1].Name.ToLower();
                 await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1));
                 return;
             }
@@ -210,7 +213,15 @@ public class UserMenuHandler : IMenuHandler
         {
             _console.WriteLine("Loading headlines...", ConsoleColor.Yellow);
 
-            var response = await _apiService.GetHeadlinesAsync(category);
+            ApiResponse<NewsResponse> response;
+            if (fromDate != null && toDate != null)
+            {
+                response = await _apiService.GetHeadlinesByDateRangeAsync(category, fromDate.Value, toDate.Value);
+            }
+            else
+            {
+                response = await _apiService.GetHeadlinesAsync(category);
+            }
 
             if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
             {
@@ -234,16 +245,24 @@ public class UserMenuHandler : IMenuHandler
                         case "3":
                                 await SaveArticleAsync(user);
                             break;
+                        case "4":
+                            await ReportArticleAsync(user);
+                            break;
                         default:
-                            _console.DisplayError("Invalid choice. Please select 1-3.");
+                            _console.DisplayError("Invalid choice. Please select 1-4.");
                             _console.PressAnyKeyToContinue();
                             break;
                     }
                 }
             }
+            else if (response.Success && (response.Data == null || response.Data.Articles == null || !response.Data.Articles.Any()))
+            {
+                _console.DisplayError("No headlines found for the selected criteria.");
+                _console.PressAnyKeyToContinue();
+            }
             else
             {
-                _console.DisplayError(response.Message ?? "No headlines found for the selected criteria.");
+                _console.DisplayError(response.Message ?? "Failed to fetch headlines.");
                 _console.PressAnyKeyToContinue();
             }
         }
@@ -382,279 +401,346 @@ public class UserMenuHandler : IMenuHandler
         }
     }
 
-    //private async Task HandleSearchAsync(UserResponse user)
-    //{
-    //    try
-    //    {
-    //        _console.Write("Enter search query: ");
-    //        var query = _console.ReadLine();
+    private async Task HandleSearchAsync(UserDto user)
+    {
+        try
+        {
+            _consoleDisplay.DisplaySearchMenu();
+            
+            _console.Write("Enter search query: ");
+            var query = _console.ReadLine();
 
-    //        if (string.IsNullOrWhiteSpace(query))
-    //        {
-    //            _console.DisplayError("Search query cannot be empty.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                _console.DisplayError("Search query cannot be empty.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
 
-    //        // Optional: Ask for date range
-    //        _console.Write("Filter by date range? (y/n): ");
-    //        var useDateRange = _console.ReadLine()?.ToLower() == "y";
+            // Optional: Ask for date range
+            _console.Write("Filter by date range? (y/n): ");
+            var useDateRange = _console.ReadLine()?.ToLower() == "y";
 
-    //        DateTime? fromDate = null;
-    //        DateTime? toDate = null;
+            DateTime? fromDate = null;
+            DateTime? toDate = null;
 
-    //        if (useDateRange)
-    //        {
-    //            _console.Write("Enter start date (yyyy-mm-dd) or press Enter to skip: ");
-    //            var startDateInput = _console.ReadLine();
-    //            if (!string.IsNullOrWhiteSpace(startDateInput) && DateTime.TryParse(startDateInput, out DateTime startDate))
-    //            {
-    //                fromDate = startDate;
-    //            }
+            if (useDateRange)
+            {
+                _console.Write("Enter start date (yyyy-mm-dd) or press Enter to skip: ");
+                var startDateInput = _console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(startDateInput) && DateTime.TryParse(startDateInput, out DateTime startDate))
+                {
+                    fromDate = startDate;
+                }
 
-    //            _console.Write("Enter end date (yyyy-mm-dd) or press Enter to skip: ");
-    //            var endDateInput = _console.ReadLine();
-    //            if (!string.IsNullOrWhiteSpace(endDateInput) && DateTime.TryParse(endDateInput, out DateTime endDate))
-    //            {
-    //                toDate = endDate.AddDays(1).AddSeconds(-1);
-    //            }
-    //        }
+                _console.Write("Enter end date (yyyy-mm-dd) or press Enter to skip: ");
+                var endDateInput = _console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(endDateInput) && DateTime.TryParse(endDateInput, out DateTime endDate))
+                {
+                    toDate = endDate.AddDays(1).AddSeconds(-1);
+                }
+            }
 
-    //        _console.WriteLine("Searching...", ConsoleColor.Yellow);
+            // Ask for sorting preference
+            _consoleDisplay.DisplaySearchSortOptions();
+            _console.Write("Enter your choice (1-4): ");
+            var sortChoice = _console.ReadLine();
 
-    //        var searchRequest = new SearchRequest
-    //        {
-    //            Query = query,
-    //            FromDate = fromDate,
-    //            ToDate = toDate,
-    //            UserId = user.Id
-    //        };
+            string sortBy = "publishedAt";
+            string sortOrder = "desc";
 
-    //        var response = await _apiService.SearchNewsAsync(searchRequest);
+            switch (sortChoice)
+            {
+                case "1": // Published Date (Newest First)
+                    sortBy = "publishedAt";
+                    sortOrder = "desc";
+                    break;
+                case "2": // Published Date (Oldest First)
+                    sortBy = "publishedAt";
+                    sortOrder = "asc";
+                    break;
+                case "3": // Most Liked
+                    sortBy = "likes";
+                    sortOrder = "desc";
+                    break;
+                case "4": // Most Disliked
+                    sortBy = "dislikes";
+                    sortOrder = "desc";
+                    break;
+                default:
+                    _console.WriteLine("Using default sorting (newest first).", ConsoleColor.Yellow);
+                    break;
+            }
 
-    //        if (response.Success && response.Data != null && response.Data.Any())
-    //        {
-    //            while (true)
-    //            {
-    //                _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-    //                _newsDisplay.DisplaySearchResults(response.Data, query);
-    //                _consoleDisplay.DisplayArticleActionMenu();
+            _console.WriteLine("Searching...", ConsoleColor.Yellow);
 
-    //                _console.Write("Enter your choice: ");
-    //                var choice = _console.ReadLine();
+            var searchRequest = new NewsAggregationClient.Models.ClientModels.SearchRequest
+            {
+                Query = query,
+                FromDate = fromDate,
+                ToDate = toDate,
+                SortBy = sortBy,
+                SortOrder = sortOrder,
+                Page = 1,
+                PageSize = 20
+            };
 
-    //                switch (choice)
-    //                {
-    //                    case "1":
-    //                        return; // Back
-    //                    case "2":
-    //                        _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-    //                        Environment.Exit(0);
-    //                        break;
-    //                    case "3":
-    //                        await SaveArticleAsync(user);
-    //                        break;
-    //                    default:
-    //                        _console.DisplayError("Invalid choice. Please select 1-3.");
-    //                        _console.PressAnyKeyToContinue();
-    //                        break;
-    //                }
-    //            }
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError($"No results found for '{query}'.");
-    //            _console.PressAnyKeyToContinue();
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error during search: {ex.Message}");
-    //        _console.PressAnyKeyToContinue();
-    //    }
-    //}
+            var response = await _apiService.SearchNewsAsync(searchRequest);
 
-    //private async Task HandleNotificationsAsync(UserResponse user)
-    //{
-    //    while (true)
-    //    {
-    //        _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-    //        _consoleDisplay.DisplayNotificationsMenu();
+            if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
+            {
+                while (true)
+                {
+                    _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+                    _newsDisplay.DisplayNewsArticles(response.Data.Articles, $"Search Results for '{query}'");
+                    _consoleDisplay.DisplayArticleActionMenu();
 
-    //        _console.Write("Enter your choice: ");
-    //        var choice = _console.ReadLine();
+                    _console.Write("Enter your choice: ");
+                    var choice = _console.ReadLine();
 
-    //        switch (choice)
-    //        {
-    //            case "1":
-    //                await ViewNotificationsAsync(user);
-    //                break;
-    //            case "2":
-    //                await ConfigureNotificationsAsync(user);
-    //                break;
-    //            case "3":
-    //                return; // Back
-    //            case "4":
-    //                _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-    //                Environment.Exit(0);
-    //                break;
-    //            default:
-    //                _console.DisplayError("Invalid choice. Please select 1-4.");
-    //                _console.PressAnyKeyToContinue();
-    //                break;
-    //        }
-    //    }
-    //}
+                    switch (choice)
+                    {
+                        case "1":
+                            return; // Back
+                        case "2":
+                            _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                            Environment.Exit(0);
+                            break;
+                        case "3":
+                            await SaveArticleAsync(user);
+                            break;
+                        case "4":
+                            await ReportArticleAsync(user);
+                            break;
+                        default:
+                            _console.DisplayError("Invalid choice. Please select 1-4.");
+                            _console.PressAnyKeyToContinue();
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                _console.DisplayError($"No results found for '{query}'.");
+                _console.PressAnyKeyToContinue();
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error during search: {ex.Message}");
+            _console.PressAnyKeyToContinue();
+        }
+    }
 
-    //private async Task ViewNotificationsAsync(UserResponse user)
-    //{
-    //    try
-    //    {
-    //        _console.WriteLine("Loading notifications...", ConsoleColor.Yellow);
+    private async Task HandleNotificationsAsync(UserDto user)
+    {
+        while (true)
+        {
+            _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+            _consoleDisplay.DisplayNotificationsMenu();
 
-    //        var response = await _apiService.GetNotificationsAsync(user.Id);
+            _console.Write("Enter your choice: ");
+            var choice = _console.ReadLine();
 
-    //        if (response.Success && response.Data != null && response.Data.Any())
-    //        {
-    //            _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-    //            _console.WriteLine("N O T I F I C A T I O N S", ConsoleColor.Cyan);
-    //            _console.WriteLine(new string('=', 50), ConsoleColor.Gray);
+            switch (choice)
+            {
+                case "1":
+                    await ViewNotificationsAsync(user);
+                    break;
+                case "2":
+                    await ConfigureNotificationsAsync(user);
+                    break;
+                case "3":
+                    return; // Back
+                case "4":
+                    _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                    Environment.Exit(0);
+                    break;
+                default:
+                    _console.DisplayError("Invalid choice. Please select 1-4.");
+                    _console.PressAnyKeyToContinue();
+                    break;
+            }
+        }
+    }
 
-    //            for (int i = 0; i < response.Data.Count; i++)
-    //            {
-    //                _console.WriteLine($"{i + 1}. {response.Data[i]}", ConsoleColor.White);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError("No notifications found.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error loading notifications: {ex.Message}");
-    //    }
+    private async Task ViewNotificationsAsync(UserDto user)
+    {
+        try
+        {
+            _console.WriteLine("Loading notifications...", ConsoleColor.Yellow);
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+            var response = await _apiService.GetNotificationsAsync();
 
-    //private async Task ConfigureNotificationsAsync(UserResponse user)
-    //{
-    //    while (true)
-    //    {
-    //        _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-    //        _consoleDisplay.DisplayNotificationConfigMenu();
+            if (response.Success && response.Data != null && response.Data.Any())
+            {
+                _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+                _consoleDisplay.DisplayNotifications(response.Data);
+            }
+            else
+            {
+                _console.DisplayError("No notifications found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading notifications: {ex.Message}");
+        }
 
-    //        _console.Write("Enter your option: ");
-    //        var choice = _console.ReadLine();
+        _console.PressAnyKeyToContinue();
+    }
 
-    //        switch (choice)
-    //        {
-    //            case "1":
-    //            case "2":
-    //            case "3":
-    //            case "4":
-    //                await ToggleCategoryNotificationAsync(user, choice);
-    //                break;
-    //            case "5":
-    //                await ConfigureKeywordsAsync(user);
-    //                break;
-    //            case "6":
-    //                return; // Back
-    //            case "7":
-    //                _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-    //                Environment.Exit(0);
-    //                break;
-    //            default:
-    //                _console.DisplayError("Invalid choice. Please select 1-7.");
-    //                _console.PressAnyKeyToContinue();
-    //                break;
-    //        }
-    //    }
-    //}
+    private async Task ConfigureNotificationsAsync(UserDto user)
+    {
+        try
+        {
+            _console.WriteLine("Loading notification settings...", ConsoleColor.Yellow);
 
-    //private async Task ToggleCategoryNotificationAsync(UserResponse user, string categoryChoice)
-    //{
-    //    try
-    //    {
-    //        string category = categoryChoice switch
-    //        {
-    //            "1" => "Business",
-    //            "2" => "Entertainment",
-    //            "3" => "Sports",
-    //            "4" => "Technology",
-    //            _ => ""
-    //        };
+            var response = await _apiService.GetNotificationSettingsAsync();
 
-    //        _console.Write($"Enable {category} notifications? (y/n): ");
-    //        var enable = _console.ReadLine()?.ToLower() == "y";
+            if (response.Success && response.Data != null)
+            {
+                await HandleNotificationSettingsAsync(user, response.Data);
+            }
+            else
+            {
+                _console.DisplayError("Failed to load notification settings.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading notification settings: {ex.Message}");
+        }
 
-    //        var settings = new Dictionary<string, bool> { { category.ToLower(), enable } };
+        _console.PressAnyKeyToContinue();
+    }
 
-    //        var response = await _apiService.ConfigureNotificationsAsync(user.Id, settings);
+    private async Task HandleNotificationSettingsAsync(UserDto user, NotificationSettings settings)
+    {
+        while (true)
+        {
+            _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+            _consoleDisplay.DisplayNotificationSettingsMenu();
 
-    //        if (response.Success)
-    //        {
-    //            var status = enable ? "enabled" : "disabled";
-    //            _console.DisplaySuccess($"{category} notifications {status} successfully!");
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to update notification settings.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error updating notifications: {ex.Message}");
-    //    }
+            _console.Write("Enter your choice: ");
+            var choice = _console.ReadLine();
 
-    //    _console.PressAnyKeyToContinue();
-    //}
+            switch (choice)
+            {
+                case "1":
+                    settings.EmailNotifications = !settings.EmailNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "2":
+                    settings.BusinessNotifications = !settings.BusinessNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "3":
+                    settings.EntertainmentNotifications = !settings.EntertainmentNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "4":
+                    settings.SportsNotifications = !settings.SportsNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "5":
+                    settings.TechnologyNotifications = !settings.TechnologyNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "6":
+                    settings.GeneralNotifications = !settings.GeneralNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "7":
+                    settings.PoliticsNotifications = !settings.PoliticsNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "8":
+                    settings.GamesNotifications = !settings.GamesNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "9":
+                    settings.SongsNotifications = !settings.SongsNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "10":
+                    settings.FestivalNotifications = !settings.FestivalNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "11":
+                    settings.MiscellaneousNotifications = !settings.MiscellaneousNotifications;
+                    await UpdateNotificationSettingsAsync(settings);
+                    break;
+                case "12":
+                    await ConfigureKeywordsAsync(settings);
+                    break;
+                case "13":
+                    await SendTestEmailNotificationAsync();
+                    break;
+                case "14":
+                    return; // Back to main menu
+                case "15":
+                    _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                    Environment.Exit(0);
+                    break;
+                default:
+                    _console.DisplayError("Invalid choice. Please select 1-15.");
+                    _console.PressAnyKeyToContinue();
+                    break;
+            }
+        }
+    }
 
-    //private async Task ConfigureKeywordsAsync(UserResponse user)
-    //{
-    //    try
-    //    {
-    //        _console.WriteLine("Current keywords will be replaced with new ones.");
-    //        _console.Write("Enter keywords separated by commas: ");
-    //        var keywordsInput = _console.ReadLine();
+    private async Task UpdateNotificationSettingsAsync(NotificationSettings settings)
+    {
+        try
+        {
+            var response = await _apiService.UpdateNotificationSettingsAsync(settings);
+            if (response.Success)
+            {
+                _console.WriteLine("Settings updated successfully!", ConsoleColor.Green);
+            }
+            else
+            {
+                _console.DisplayError($"Failed to update settings: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error updating settings: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
 
-    //        if (string.IsNullOrWhiteSpace(keywordsInput))
-    //        {
-    //            _console.DisplayError("Keywords cannot be empty.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+    private async Task ConfigureKeywordsAsync(NotificationSettings settings)
+    {
+        _console.WriteLine("Enter keywords (comma-separated): ", ConsoleColor.Yellow);
+        var keywords = _console.ReadLine();
+        
+        if (!string.IsNullOrEmpty(keywords))
+        {
+            settings.Keywords = keywords;
+            await UpdateNotificationSettingsAsync(settings);
+        }
+    }
 
-    //        var keywords = keywordsInput.Split(',')
-    //            .Select(k => k.Trim())
-    //            .Where(k => !string.IsNullOrWhiteSpace(k))
-    //            .ToList();
+    private async Task SendTestEmailNotificationAsync()
+    {
+        try
+        {
+            _console.WriteLine("Sending test email notification...", ConsoleColor.Yellow);
 
-    //        if (!keywords.Any())
-    //        {
-    //            _console.DisplayError("No valid keywords provided.");
-    //            _console.PressAnyKeyToContinue();
-    //            return;
-    //        }
+            var response = await _apiService.SendTestEmailNotificationAsync();
 
-    //        var response = await _apiService.ConfigureKeywordsAsync(user.Id, keywords);
-
-    //        if (response.Success)
-    //        {
-    //            _console.DisplaySuccess($"Keywords configured successfully! ({keywords.Count} keywords)");
-    //            _console.WriteLine($"Keywords: {string.Join(", ", keywords)}", ConsoleColor.Gray);
-    //        }
-    //        else
-    //        {
-    //            _console.DisplayError(response.Message ?? "Failed to configure keywords.");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _console.DisplayError($"Error configuring keywords: {ex.Message}");
-    //    }
-
-    //    _console.PressAnyKeyToContinue();
-    //}
+            if (response.Success)
+            {
+                _console.DisplaySuccess("Test email notification sent successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to send test email notification.");
+            }
+        }
+        catch (Exception ex)
+        {
 }

@@ -31,6 +31,10 @@ public class ConsoleDisplayService
             "View the external server's details",
             "Update/Edit the external server's details",
             "Add new News Category",
+            "View Reported Articles",
+            "Hide Article",
+            "Hide Category",
+            "Manage Filtered Keywords",
             "Logout"
         };
 
@@ -49,6 +53,7 @@ public class ConsoleDisplayService
         var menuItems = new List<string>
         {
             "Headlines",
+            "Personalized Headlines",
             "Saved Articles",
             "Search",
             "Notifications",
@@ -84,23 +89,14 @@ public class ConsoleDisplayService
         _console.WriteLine("");
     }
 
-    public void DisplayCategoryMenu()
+    public void DisplayCategoryMenu(List<Category> categories)
     {
-        var categories = new List<string>
-        {
-            "All",
-            "Business",
-            "Entertainment",
-            "Sports",
-            "Technology"
-        };
-
         _console.WriteLine("Please choose the options below for Headlines", ConsoleColor.Yellow);
         _console.WriteLine("");
 
         for (int i = 0; i < categories.Count; i++)
         {
-            _console.WriteLine($"{i + 1}. {categories[i]}", ConsoleColor.White);
+            _console.WriteLine($"{i + 1}. {categories[i].Name}", ConsoleColor.White);
         }
         _console.WriteLine("");
     }
@@ -111,7 +107,10 @@ public class ConsoleDisplayService
         {
             "Back",
             "Logout",
-            "Save Article"
+            "Save Article",
+            "Report Article",
+            "Like Article",
+            "Dislike Article"
         };
 
         _console.WriteLine("");
@@ -157,5 +156,83 @@ public class ConsoleDisplayService
             _console.WriteLine($"{i + 1}. {menuItems[i]}", ConsoleColor.White);
         }
         _console.WriteLine("");
+    }
+
+    public void DisplaySearchMenu()
+    {
+        _console.WriteLine("Please enter your search criteria:", ConsoleColor.Yellow);
+        _console.WriteLine("");
+    }
+
+    public void DisplaySearchSortOptions()
+    {
+        var sortOptions = new List<string>
+        {
+            "Published Date (Newest First)",
+            "Published Date (Oldest First)",
+            "Most Liked",
+            "Most Disliked"
+        };
+
+        _console.WriteLine("Sort by:", ConsoleColor.Yellow);
+        _console.WriteLine("");
+
+        for (int i = 0; i < sortOptions.Count; i++)
+        {
+            _console.WriteLine($"{i + 1}. {sortOptions[i]}", ConsoleColor.White);
+        }
+        _console.WriteLine("");
+    }
+
+    public void DisplayNotificationSettingsMenu()
+    {
+        var menuItems = new List<string>
+        {
+            "Toggle Email Notifications",
+            "Toggle Business Notifications",
+            "Toggle Entertainment Notifications",
+            "Toggle Sports Notifications",
+            "Toggle Technology Notifications",
+            "Toggle General Notifications",
+            "Toggle Politics Notifications",
+            "Toggle Games Notifications",
+            "Toggle Songs Notifications",
+            "Toggle Festival Notifications",
+            "Toggle Miscellaneous Notifications",
+            "Configure Keywords",
+            "Back to Main Menu",
+            "Logout"
+        };
+
+        _console.WriteLine("Notification Settings:", ConsoleColor.Yellow);
+        _console.WriteLine("");
+
+        for (int i = 0; i < menuItems.Count; i++)
+        {
+            _console.WriteLine($"{i + 1}. {menuItems[i]}", ConsoleColor.White);
+        }
+        _console.WriteLine("");
+    }
+
+    public void DisplayNotifications(List<NotificationResponse> notifications)
+    {
+        _console.DisplayHeader("N O T I F I C A T I O N S");
+        
+        if (!notifications.Any())
+        {
+            _console.WriteLine("No notifications found.", ConsoleColor.Yellow);
+            return;
+        }
+
+        foreach (var notification in notifications)
+        {
+            var status = notification.IsRead ? "[READ]" : "[NEW]";
+            var color = notification.IsRead ? ConsoleColor.Gray : ConsoleColor.White;
+            
+            _console.WriteLine($"{status} {notification.Title}", color);
+            _console.WriteLine($"   {notification.Message}", ConsoleColor.Cyan);
+            _console.WriteLine($"   Type: {notification.Type} | Date: {notification.CreatedAt:yyyy-MM-dd HH:mm}", ConsoleColor.DarkGray);
+            _console.DisplaySeparator();
+        }
     }
 }

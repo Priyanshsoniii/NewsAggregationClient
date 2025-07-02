@@ -51,10 +51,25 @@ public class AdminMenuHandler : IMenuHandler
                     await AddNewsCategoryAsync();
                     break;
                 case "5":
+                    await ViewReportedArticlesAsync();
+                    break;
+                case "6":
+                    await ViewReportedArticlesAsync();
+                    break;
+                case "7":
+                    await HideArticleAsync();
+                    break;
+                case "8":
+                    await HideCategoryAsync();
+                    break;
+                case "9":
+                    await ManageFilteredKeywordsAsync();
+                    break;
+                case "10":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                     return;
                 default:
-                    _console.DisplayError("Invalid choice. Please select 1-5.");
+                    _console.DisplayError("Invalid choice. Please select 1-10.");
                     _console.PressAnyKeyToContinue();
                     break;
             }
@@ -264,6 +279,215 @@ public class AdminMenuHandler : IMenuHandler
         catch (Exception ex)
         {
             _console.DisplayError($"Error adding category: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task ViewReportedArticlesAsync()
+    {
+        try
+        {
+            _console.WriteLine("Loading reported articles...", ConsoleColor.Yellow);
+            var response = await _apiService.GetReportedArticlesAsync();
+            
+            if (response.Success && response.Data != null && response.Data.Count > 0)
+            {
+                _console.DisplayHeader("R E P O R T E D   A R T I C L E S");
+                _console.WriteLine($"Total reported articles: {response.Data.Count}", ConsoleColor.Cyan);
+                _console.WriteLine("");
+
+                foreach (var article in response.Data)
+                {
+                    _console.WriteLine($"Article: {article}", ConsoleColor.White);
+                    _console.DisplaySeparator();
+                }
+            }
+            else
+            {
+                _console.DisplaySuccess("No reported articles found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading reported articles: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task HideArticleAsync()
+    {
+        try
+        {
+            _console.Write("Enter Article ID to hide: ");
+            var input = _console.ReadLine();
+
+            if (!int.TryParse(input, out int articleId) || articleId <= 0)
+            {
+                _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.WriteLine("Hiding article...", ConsoleColor.Yellow);
+
+            var response = await _apiService.HideArticleAsync(articleId);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess("Article hidden successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to hide article.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error hiding article: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task HideCategoryAsync()
+    {
+        try
+        {
+            _console.Write("Enter Category ID to hide: ");
+            var input = _console.ReadLine();
+
+            if (!int.TryParse(input, out int categoryId) || categoryId <= 0)
+            {
+                _console.DisplayError("Invalid Category ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.WriteLine("Hiding category...", ConsoleColor.Yellow);
+
+            var response = await _apiService.HideCategoryAsync(categoryId);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess("Category hidden successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to hide category.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error hiding category: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task ManageFilteredKeywordsAsync()
+    {
+        try
+        {
+            while (true)
+            {
+                _console.WriteLine("Filtered Keywords Management:", ConsoleColor.Cyan);
+                _console.WriteLine("1. View all filtered keywords");
+                _console.WriteLine("2. Add new filtered keyword");
+                _console.WriteLine("3. Back to main menu");
+                _console.WriteLine("");
+
+                _console.Write("Enter your choice: ");
+                var choice = _console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        await ViewFilteredKeywordsAsync();
+                        break;
+                    case "2":
+                        await AddFilteredKeywordAsync();
+                        break;
+                    case "3":
+                        return;
+                    default:
+                        _console.DisplayError("Invalid choice. Please select 1-3.");
+                        _console.PressAnyKeyToContinue();
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error managing filtered keywords: {ex.Message}");
+            _console.PressAnyKeyToContinue();
+        }
+    }
+
+    private async Task ViewFilteredKeywordsAsync()
+    {
+        try
+        {
+            _console.WriteLine("Loading filtered keywords...", ConsoleColor.Yellow);
+            var response = await _apiService.GetFilteredKeywordsAsync();
+
+            if (response.Success && response.Data != null && response.Data.Count > 0)
+            {
+                _console.WriteLine($"\nFiltered Keywords (count: {response.Data.Count}):", ConsoleColor.Cyan);
+                foreach (var keyword in response.Data)
+                {
+                    _console.WriteLine($"- {keyword}", ConsoleColor.White);
+                }
+            }
+            else
+            {
+                _console.DisplaySuccess("No filtered keywords found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading filtered keywords: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task AddFilteredKeywordAsync()
+    {
+        try
+        {
+            _console.Write("Enter keyword to filter: ");
+            var keyword = _console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                _console.DisplayError("Keyword cannot be empty.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            keyword = keyword.Trim().ToLower();
+            if (keyword.Length < 2)
+            {
+                _console.DisplayError("Keyword must be at least 2 characters long.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.WriteLine("Adding filtered keyword...", ConsoleColor.Yellow);
+
+            var response = await _apiService.AddFilteredKeywordAsync(keyword);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Keyword '{keyword}' added to filter successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to add filtered keyword.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error adding filtered keyword: {ex.Message}");
         }
         _console.PressAnyKeyToContinue();
     }

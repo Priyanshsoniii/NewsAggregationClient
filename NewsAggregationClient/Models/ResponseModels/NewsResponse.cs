@@ -25,6 +25,20 @@ public class NewsArticle
     public bool IsSaved { get; internal set; }
 }
 
+public class SavedArticle
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string Url { get; set; }
+    public string Source { get; set; }
+    public DateTime PublishedAt { get; set; }
+    public int Likes { get; set; }
+    public int Dislikes { get; set; }
+    public string CategoryName { get; set; }
+    public int CategoryId { get; set; }
+}
+
 public class Category
 {
     public int Id { get; set; }
