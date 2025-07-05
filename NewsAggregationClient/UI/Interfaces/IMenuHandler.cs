@@ -1,4 +1,4 @@
-﻿namespace NewsAggregation.Client.UI.Interfaces;
+﻿namespace NewsAggregationClient.UI.Interfaces;
 
 public interface IMenuHandler
 {

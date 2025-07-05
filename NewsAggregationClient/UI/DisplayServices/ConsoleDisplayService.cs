@@ -1,7 +1,9 @@
-﻿using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.UI.Interfaces;
+﻿using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.UI.Interfaces;
+using NewsAggregationClient.Models.ResponseModels;
+using NewsAggregationClient.Models.ClientModels;
 
-namespace NewsAggregation.Client.UI.DisplayServices;
+namespace NewsAggregationClient.UI.DisplayServices;
 
 public class ConsoleDisplayService
 {
@@ -184,7 +186,7 @@ public class ConsoleDisplayService
         _console.WriteLine("");
     }
 
-    public void DisplayNotificationSettingsMenu()
+    public void DisplayNotificationSettingsMenu(NotificationSettings settings)
     {
         var menuItems = new List<string>
         {
@@ -214,7 +216,7 @@ public class ConsoleDisplayService
         _console.WriteLine("");
     }
 
-    public void DisplayNotifications(List<NotificationResponse> notifications)
+    public void DisplayNotifications(List<NewsAggregationClient.Models.ResponseModels.NotificationResponse> notifications)
     {
         _console.DisplayHeader("N O T I F I C A T I O N S");
         

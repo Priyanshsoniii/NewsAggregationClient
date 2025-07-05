@@ -1,11 +1,10 @@
-﻿using NewsAggregation.Client.Models.ResponseModels;
-using NewsAggregation.Client.Models.ClientModels;
-using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.UI.DisplayServices;
-using NewsAggregation.Client.UI.Interfaces;
+﻿using NewsAggregationClient.Models.ResponseModels;
 using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.UI.DisplayServices;
+using NewsAggregationClient.UI.Interfaces;
 
-namespace NewsAggregation.Client.UI.MenuHandlers;
+namespace NewsAggregationClient.UI.MenuHandlers;
 
 public class AdminMenuHandler : IMenuHandler
 {

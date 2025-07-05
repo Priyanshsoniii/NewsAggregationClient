@@ -1,6 +1,7 @@
-﻿using NewsAggregation.Client.Models.ResponseModels;
+﻿using NewsAggregationClient.Models.ResponseModels;
+using NewsAggregationClient.Models.DTOs.ResponseDTOs;
 
-namespace NewsAggregation.Client.UI.Interfaces;
+namespace NewsAggregationClient.UI.Interfaces;
 
 public interface IDisplayService
 {
@@ -8,12 +9,13 @@ public interface IDisplayService
     void DisplayNewsArticle(NewsArticle article);
     void DisplaySavedArticles(List<SavedArticle> articles);
     void DisplaySearchResults(List<NewsArticle> articles, string query);
-    void DisplayExternalServers(List<ExternalServerResponse> servers);
-    void DisplayExternalServerDetails(ExternalServerResponse server);
+    void DisplayExternalServers(List<ExternalServerResponseDto> servers);
+    void DisplayExternalServerDetails(ExternalServerResponseDto server);
     void DisplayNotifications(List<NotificationResponse> notifications);
     void DisplayNotificationSettings(NotificationSettings settings);
     void DisplayUserWelcome(string username, DateTime currentTime);
     void DisplayMenu(List<string> menuItems, string title);
     void DisplayPaginatedArticles(List<NewsArticle> articles, int currentPage, int totalPages, string title);
     void DisplayCategoryMenu(List<Category> categories);
+    void DisplayNotificationSettingsMenu(NotificationSettings settings);
 }

@@ -1,8 +1,9 @@
-﻿using NewsAggregation.Client.Models.ResponseModels;
-using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.UI.Interfaces;
+﻿using NewsAggregationClient.Models.ResponseModels;
+using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.UI.Interfaces;
+using NewsAggregationClient.Models.DTOs.ResponseDTOs;
 
-namespace NewsAggregation.Client.UI.DisplayServices;
+namespace NewsAggregationClient.UI.DisplayServices;
 
 public class NewsDisplayService : IDisplayService
 {
@@ -108,7 +109,7 @@ public class NewsDisplayService : IDisplayService
         }
     }
 
-    public void DisplayExternalServers(List<ExternalServerResponse> servers)
+    public void DisplayExternalServers(List<ExternalServerResponseDto> servers)
     {
         _console.DisplayHeader("External Servers");
 
@@ -133,7 +134,7 @@ public class NewsDisplayService : IDisplayService
         }
     }
 
-    public void DisplayExternalServerDetails(ExternalServerResponse server)
+    public void DisplayExternalServerDetails(ExternalServerResponseDto server)
     {
         _console.DisplayHeader("External Server Details");
 
@@ -225,6 +226,36 @@ public class NewsDisplayService : IDisplayService
         if (totalPages > 1)
         {
             _console.WriteLine($"Page {currentPage} of {totalPages}", ConsoleColor.Cyan);
+        }
+    }
+
+    public void DisplayCategoryMenu(List<Category> categories)
+    {
+        Console.WriteLine("Categories:");
+        for (int i = 0; i < categories.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {categories[i].Name}");
+        }
+    }
+
+    public void DisplayNotificationSettingsMenu(NotificationSettings settings)
+    {
+        _console.DisplayHeader("Notification Settings Menu");
+        _console.WriteLine($"Email Notifications: {(settings.EmailEnabled ? "Enabled" : "Disabled")}", settings.EmailEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Business: {(settings.BusinessEnabled ? "Enabled" : "Disabled")}", settings.BusinessEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Entertainment: {(settings.EntertainmentEnabled ? "Enabled" : "Disabled")}", settings.EntertainmentEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Sports: {(settings.SportsEnabled ? "Enabled" : "Disabled")}", settings.SportsEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Technology: {(settings.TechnologyEnabled ? "Enabled" : "Disabled")}", settings.TechnologyEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"General: {(settings.GeneralEnabled ? "Enabled" : "Disabled")}", settings.GeneralEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Politics: {(settings.PoliticsEnabled ? "Enabled" : "Disabled")}", settings.PoliticsEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Games: {(settings.GamesEnabled ? "Enabled" : "Disabled")}", settings.GamesEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Songs: {(settings.SongsEnabled ? "Enabled" : "Disabled")}", settings.SongsEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Festival: {(settings.FestivalEnabled ? "Enabled" : "Disabled")}", settings.FestivalEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine($"Miscellaneous: {(settings.MiscellaneousEnabled ? "Enabled" : "Disabled")}", settings.MiscellaneousEnabled ? ConsoleColor.Green : ConsoleColor.Red);
+        _console.WriteLine("");
+        if (settings.Keywords != null && settings.Keywords.Any())
+        {
+            _console.WriteLine($"Keywords: {string.Join(", ", settings.Keywords)}", ConsoleColor.Cyan);
         }
     }
 

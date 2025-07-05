@@ -1,7 +1,7 @@
-﻿using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.Services;
-using NewsAggregation.Client.UI.DisplayServices;
-using NewsAggregation.Client.UI.MenuHandlers;
+﻿using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.Services;
+using NewsAggregationClient.UI.DisplayServices;
+using NewsAggregationClient.UI.MenuHandlers;
 
 public class Program
 {

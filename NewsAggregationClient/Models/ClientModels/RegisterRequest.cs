@@ -1,4 +1,4 @@
-﻿namespace NewsAggregation.Client.Models.ClientModels;
+﻿namespace NewsAggregationClient.Models.ClientModels;
 
 public class RegisterRequest
 {

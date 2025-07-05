@@ -11,5 +11,9 @@ namespace NewsAggregationClient.Models.DTOs.ResponseDTOs
         public int? RequestsPerHour { get; set; }
         public int? CurrentHourRequests { get; set; }
         public string? CreatedAt { get; set; }
+
+        public bool IsActive { get; set; }
+        public string? ApiKey { get; set; }
+        public string? BaseUrl { get; set; }
     }
 } 

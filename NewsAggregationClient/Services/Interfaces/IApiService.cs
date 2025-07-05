@@ -1,9 +1,8 @@
-﻿using NewsAggregation.Client.Models.ClientModels;
-using NewsAggregation.Client.Models.ResponseModels;
-using NewsAggregationClient.Models.ClientModels;
+﻿using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Models.ResponseModels;
 using NewsAggregationClient.Models.DTOs.ResponseDTOs;
 
-namespace NewsAggregation.Client.Services.Interfaces;
+namespace NewsAggregationClient.Services.Interfaces;
 
 public interface IApiService
 {
@@ -44,4 +43,5 @@ public interface IApiService
     Task<ApiResponse<bool>> DislikeArticleAsync(int articleId);
     Task<ApiResponse<bool>> MarkArticleAsReadAsync(int articleId);
     Task<List<Category>> GetCategoriesAsync();
+    Task<ApiResponse<bool>> SendTestEmailNotificationAsync();
 }

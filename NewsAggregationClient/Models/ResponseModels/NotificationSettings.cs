@@ -18,4 +18,18 @@ public class NotificationSettings
     public string Keywords { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-} 
+
+    // Add these aliases for compatibility
+    public bool EmailEnabled => EmailNotifications;
+    public bool BusinessEnabled => BusinessNotifications;
+    public bool EntertainmentEnabled => EntertainmentNotifications;
+    public bool SportsEnabled => SportsNotifications;
+    public bool TechnologyEnabled => TechnologyNotifications;
+    public bool GeneralEnabled => GeneralNotifications;
+    public bool PoliticsEnabled => PoliticsNotifications;
+    public bool GamesEnabled => GamesNotifications;
+    public bool SongsEnabled => SongsNotifications;
+    public bool FestivalEnabled => FestivalNotifications;
+    public bool MiscellaneousEnabled => MiscellaneousNotifications;
+    public bool KeywordsEnabled => !string.IsNullOrEmpty(Keywords);
+}

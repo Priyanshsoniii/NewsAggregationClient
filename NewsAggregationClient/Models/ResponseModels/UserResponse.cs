@@ -1,4 +1,4 @@
-﻿namespace NewsAggregation.Client.Models.ResponseModels;
+﻿namespace NewsAggregationClient.Models.ResponseModels;
 
 public class UserResponse
 {
@@ -19,24 +19,4 @@ public class ExternalServerResponse
     public bool IsActive { get; set; }
     public DateTime LastAccessed { get; set; }
     public string Status { get; set; } = string.Empty;
-}
-
-public class NotificationSettings
-{
-    public bool BusinessEnabled { get; set; }
-    public bool EntertainmentEnabled { get; set; }
-    public bool SportsEnabled { get; set; }
-    public bool TechnologyEnabled { get; set; }
-    public bool KeywordsEnabled { get; set; }
-    public List<string> Keywords { get; set; } = new();
-}
-
-public class NotificationResponse
-{
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
-    public bool IsRead { get; set; }
 }

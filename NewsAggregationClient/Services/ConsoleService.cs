@@ -1,7 +1,7 @@
 ﻿// Services/ConsoleService.cs
-using NewsAggregation.Client.Services.Interfaces;
+using NewsAggregationClient.Services.Interfaces;
 
-namespace NewsAggregation.Client.Services;
+namespace NewsAggregationClient.Services;
 
 public class ConsoleService : IConsoleService
 {

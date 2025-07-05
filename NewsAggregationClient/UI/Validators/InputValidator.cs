@@ -1,7 +1,7 @@
 ﻿// UI/Validators/InputValidator.cs
 using System.Text.RegularExpressions;
 
-namespace NewsAggregation.Client.UI.Validators;
+namespace NewsAggregationClient.UI.Validators;
 
 public static class InputValidator
 {

@@ -1,4 +1,4 @@
-﻿namespace NewsAggregation.Client.Services.Interfaces;
+﻿namespace NewsAggregationClient.Services.Interfaces;
 
 public interface IConsoleService
 {

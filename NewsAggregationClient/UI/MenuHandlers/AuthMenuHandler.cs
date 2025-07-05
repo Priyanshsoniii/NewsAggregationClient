@@ -1,8 +1,8 @@
-﻿using NewsAggregation.Client.Models.ClientModels;
-using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.UI.Validators;
+﻿using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.UI.Validators;
 
-namespace NewsAggregation.Client.UI.MenuHandlers;
+namespace NewsAggregationClient.UI.MenuHandlers;
 
 public class AuthMenuHandler(IConsoleService console, IApiService apiService, AdminMenuHandler adminHandler, UserMenuHandler userHandler)
 {

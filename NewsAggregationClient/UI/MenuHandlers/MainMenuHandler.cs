@@ -1,8 +1,8 @@
-﻿using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.UI.DisplayServices;
-using NewsAggregation.Client.UI.Interfaces;
+﻿using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.UI.DisplayServices;
+using NewsAggregationClient.UI.Interfaces;
 
-namespace NewsAggregation.Client.UI.MenuHandlers;
+namespace NewsAggregationClient.UI.MenuHandlers;
 
 public class MainMenuHandler : IMenuHandler
 {

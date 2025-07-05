@@ -1,11 +1,10 @@
-﻿using NewsAggregation.Client.Models.ResponseModels;
-using NewsAggregation.Client.Models.ClientModels;
-using NewsAggregation.Client.Services.Interfaces;
-using NewsAggregation.Client.UI.DisplayServices;
-using NewsAggregation.Client.UI.Interfaces;
+﻿using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Services.Interfaces;
+using NewsAggregationClient.UI.DisplayServices;
+using NewsAggregationClient.UI.Interfaces;
 using NewsAggregationClient.Models.ResponseModels;
 
-namespace NewsAggregation.Client.UI.MenuHandlers;
+namespace NewsAggregationClient.UI.MenuHandlers;
 
 public class UserMenuHandler : IMenuHandler
 {
@@ -532,6 +531,102 @@ public class UserMenuHandler : IMenuHandler
         }
     }
 
+    private async Task HandlePersonalizedHeadlinesAsync(UserDto user)
+    {
+        try
+        {
+            _console.WriteLine("Loading personalized headlines...", ConsoleColor.Yellow);
+
+            var response = await _apiService.GetPersonalizedHeadlinesAsync();
+
+            if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
+            {
+                while (true)
+                {
+                    _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+                    _newsDisplay.DisplayNewsArticles(response.Data.Articles, "Personalized Headlines");
+                    _consoleDisplay.DisplayArticleActionMenu();
+
+                    _console.Write("Enter your choice: ");
+                    var choice = _console.ReadLine();
+
+                    switch (choice)
+                    {
+                        case "1":
+                            return; // Back
+                        case "2":
+                            _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                            Environment.Exit(0);
+                            break;
+                        case "3":
+                            await SaveArticleAsync(user);
+                            break;
+                        case "4":
+                            await ReportArticleAsync(user);
+                            break;
+                        default:
+                            _console.DisplayError("Invalid choice. Please select 1-4.");
+                            _console.PressAnyKeyToContinue();
+                            break;
+                    }
+                }
+            }
+            else if (response.Success && (response.Data == null || response.Data.Articles == null || !response.Data.Articles.Any()))
+            {
+                _console.DisplayError("No personalized headlines found.");
+                _console.PressAnyKeyToContinue();
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to fetch personalized headlines.");
+                _console.PressAnyKeyToContinue();
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error loading personalized headlines: {ex.Message}");
+            _console.PressAnyKeyToContinue();
+        }
+    }
+
+    private async Task ReportArticleAsync(UserDto user)
+    {
+        try
+        {
+            _console.Write("Enter Article ID to report: ");
+            var input = _console.ReadLine();
+
+            if (!int.TryParse(input, out int articleId) || articleId <= 0)
+            {
+                _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.Write("Enter reason for reporting (optional): ");
+            var reason = _console.ReadLine();
+
+            _console.WriteLine("Reporting article...", ConsoleColor.Yellow);
+
+            var response = await _apiService.ReportArticleAsync(articleId, reason);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Article {articleId} reported successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to report article.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error reporting article: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
     private async Task HandleNotificationsAsync(UserDto user)
     {
         while (true)
@@ -620,7 +715,7 @@ public class UserMenuHandler : IMenuHandler
         while (true)
         {
             _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-            _consoleDisplay.DisplayNotificationSettingsMenu();
+            _consoleDisplay.DisplayNotificationSettingsMenu(settings);
 
             _console.Write("Enter your choice: ");
             var choice = _console.ReadLine();
@@ -743,4 +838,8 @@ public class UserMenuHandler : IMenuHandler
         }
         catch (Exception ex)
         {
+            _console.DisplayError($"Error sending test email: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
 }

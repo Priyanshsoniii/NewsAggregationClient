@@ -1,4 +1,4 @@
-﻿namespace NewsAggregation.Client.Models.ResponseModels;
+﻿namespace NewsAggregationClient.Models.ResponseModels;
 
 public class NewsResponse
 {

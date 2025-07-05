@@ -1,13 +1,12 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
-using NewsAggregation.Client.Models.ClientModels;
-using NewsAggregation.Client.Models.ResponseModels;
-using NewsAggregation.Client.Services.Interfaces;
 using NewsAggregationClient.Models.ClientModels;
+using NewsAggregationClient.Models.ResponseModels;
+using NewsAggregationClient.Services.Interfaces;
 using NewsAggregationClient.Models.DTOs.ResponseDTOs;
 using System.Text;
 
-namespace NewsAggregation.Client.Services;
+namespace NewsAggregationClient.Services;
 
 public class ApiService : IApiService
 {
