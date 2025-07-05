@@ -876,7 +876,7 @@ public class UserMenuHandler : IMenuHandler
                     await ConfigureKeywordsAsync(settings);
                     break;
                 case "13":
-                    await SendTestEmailNotificationAsync();
+                    await SendTestEmailNotificationAsync(user);
                     break;
                 case "14":
                     return; // Back to main menu
@@ -946,13 +946,13 @@ public class UserMenuHandler : IMenuHandler
         }
     }
 
-    private async Task SendTestEmailNotificationAsync()
+    private async Task SendTestEmailNotificationAsync(UserDto user)
     {
         try
         {
             _console.WriteLine("Sending test email notification...", ConsoleColor.Yellow);
 
-            var response = await _apiService.SendTestEmailNotificationAsync();
+            var response = await _apiService.SendTestEmailNotificationAsync(user.Email);
 
             if (response.Success)
             {

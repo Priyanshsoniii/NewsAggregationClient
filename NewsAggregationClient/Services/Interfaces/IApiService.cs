@@ -45,6 +45,6 @@ public interface IApiService
     Task<ApiResponse<bool>> DislikeArticleAsync(int articleId);
     Task<ApiResponse<bool>> MarkArticleAsReadAsync(int articleId);
     Task<List<Category>> GetCategoriesAsync();
-    Task<ApiResponse<bool>> SendTestEmailNotificationAsync();
+    Task<ApiResponse<bool>> SendTestEmailNotificationAsync(string userEmail);
     Task<ApiResponse<bool>> TriggerNewsAggregationAsync();
 }

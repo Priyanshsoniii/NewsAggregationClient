@@ -1402,28 +1402,50 @@ public class ApiService : IApiService
         return JsonSerializer.Deserialize<List<Category>>(responseContent, _jsonOptions) ?? new List<Category>();
     }
 
-    public async Task<ApiResponse<bool>> SendTestEmailNotificationAsync()
+    public async Task<ApiResponse<bool>> SendTestEmailNotificationAsync(string userEmail)
     {
         try
         {
-            var response = await _httpClient.PostAsync("api/Notification/test-email", null);
+            var request = new { email = userEmail };
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("api/Notification/test-email-direct", content);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                var message = "Test email sent successfully.";
+                
+                if (root.TryGetProperty("message", out var messageProp))
+                {
+                    message = messageProp.GetString() ?? message;
+                }
+
                 return new ApiResponse<bool>
                 {
                     Success = true,
-                    Message = "Test email sent successfully.",
+                    Message = message,
                     Data = true
                 };
             }
             else
             {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                var errorMessage = "Failed to send test email.";
+                
+                if (root.TryGetProperty("message", out var messageProp))
+                {
+                    errorMessage = messageProp.GetString() ?? errorMessage;
+                }
+
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Failed to send test email.",
+                    Message = errorMessage,
                     Errors = new List<string> { responseContent }
                 };
             }
