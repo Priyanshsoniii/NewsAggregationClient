@@ -830,66 +830,100 @@ public class UserMenuHandler : IMenuHandler
         while (true)
         {
             _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-            _consoleDisplay.DisplayNotificationSettingsMenu(settings);
+            
+            // Get all available categories dynamically
+            var categories = await _apiService.GetCategoriesAsync();
+            if (categories == null || categories.Count == 0)
+            {
+                _console.DisplayError("No categories available.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            // Refresh notification settings from API to get current status
+            var settingsResponse = await _apiService.GetNotificationSettingsAsync();
+            if (settingsResponse.Success && settingsResponse.Data != null)
+            {
+                settings = settingsResponse.Data;
+            }
+
+            // Display dynamic notification settings menu
+            DisplayDynamicNotificationSettingsMenu(settings, categories);
 
             _console.Write("Enter your choice: ");
             var choice = _console.ReadLine();
 
-            switch (choice)
+            if (choice == "1")
             {
-                case "1":
-                    // Email notifications - use the old method for now
-                    settings.EmailNotifications = !settings.EmailNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
-                    break;
-                case "2":
-                    await ToggleNotificationCategoryAsync(1); // Business
-                    break;
-                case "3":
-                    await ToggleNotificationCategoryAsync(2); // Entertainment
-                    break;
-                case "4":
-                    await ToggleNotificationCategoryAsync(3); // Sports
-                    break;
-                case "5":
-                    await ToggleNotificationCategoryAsync(4); // Technology
-                    break;
-                case "6":
-                    await ToggleNotificationCategoryAsync(5); // General
-                    break;
-                case "7":
-                    await ToggleNotificationCategoryAsync(6); // Politics
-                    break;
-                case "8":
-                    await ToggleNotificationCategoryAsync(7); // Games
-                    break;
-                case "9":
-                    await ToggleNotificationCategoryAsync(9); // Songs
-                    break;
-                case "10":
-                    await ToggleNotificationCategoryAsync(10); // Festival
-                    break;
-                case "11":
-                    await ToggleNotificationCategoryAsync(11); // Miscellaneous
-                    break;
-                case "12":
-                    await ConfigureKeywordsAsync(settings);
-                    break;
-                case "13":
-                    await SendTestEmailNotificationAsync(user);
-                    break;
-                case "14":
-                    return; // Back to main menu
-                case "15":
-                    _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-                    Environment.Exit(0);
-                    break;
-                default:
-                    _console.DisplayError("Invalid choice. Please select 1-15.");
-                    _console.PressAnyKeyToContinue();
-                    break;
+                // Email notifications - use the old method for now
+                settings.EmailNotifications = !settings.EmailNotifications;
+                await UpdateNotificationSettingsAsync(settings);
+            }
+            else if (choice == "2")
+            {
+                await ConfigureKeywordsAsync(settings);
+            }
+            else if (choice == "3")
+            {
+                await SendTestEmailNotificationAsync(user);
+            }
+            else if (choice == "4")
+            {
+                return; // Back to main menu
+            }
+            else if (choice == "5")
+            {
+                _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                Environment.Exit(0);
+            }
+            else if (int.TryParse(choice, out int categoryChoice) && categoryChoice >= 6 && categoryChoice <= 5 + categories.Count)
+            {
+                // Dynamic category toggle (options 6+ are category toggles)
+                var categoryIndex = categoryChoice - 6;
+                var category = categories[categoryIndex];
+                await ToggleNotificationCategoryAsync(category.Id);
+            }
+            else
+            {
+                _console.DisplayError($"Invalid choice. Please select 1-{5 + categories.Count}.");
+                _console.PressAnyKeyToContinue();
             }
         }
+    }
+
+    private void DisplayDynamicNotificationSettingsMenu(NotificationSettings settings, List<Category> categories)
+    {
+        _console.WriteLine("Notification Settings:", ConsoleColor.Yellow);
+        _console.WriteLine("");
+
+        // Email notifications
+        var emailStatus = settings.EmailNotifications ? "[ENABLED]" : "[DISABLED]";
+        _console.WriteLine($"1. Toggle Email Notifications {emailStatus}", ConsoleColor.White);
+
+        // Keywords and test email
+        _console.WriteLine("2. Configure Keywords", ConsoleColor.White);
+        _console.WriteLine("3. Send Test Email", ConsoleColor.White);
+        _console.WriteLine("4. Back to Main Menu", ConsoleColor.White);
+        _console.WriteLine("5. Logout", ConsoleColor.White);
+
+        _console.WriteLine("", ConsoleColor.White);
+        _console.WriteLine("Category Notifications:", ConsoleColor.Yellow);
+
+        // Dynamic category list
+        for (int i = 0; i < categories.Count; i++)
+        {
+            var category = categories[i];
+            var categoryStatus = GetCategoryNotificationStatus(settings, category.Name) ? "[ENABLED]" : "[DISABLED]";
+            _console.WriteLine($"{i + 6}. Toggle {category.Name} Notifications {categoryStatus}", ConsoleColor.White);
+        }
+
+        _console.WriteLine("");
+    }
+
+    private bool GetCategoryNotificationStatus(NotificationSettings settings, string categoryName)
+    {
+        // Use the dynamic method to get category notification status
+        return settings.GetCategoryNotification(categoryName);
     }
 
     private async Task ToggleNotificationCategoryAsync(int categoryId)
@@ -910,7 +944,7 @@ public class UserMenuHandler : IMenuHandler
         {
             _console.DisplayError($"Error updating settings: {ex.Message}");
         }
-        _console.PressAnyKeyToContinue();
+        // Remove the PressAnyKeyToContinue so the menu refreshes immediately
     }
 
     private async Task UpdateNotificationSettingsAsync(NotificationSettings settings)

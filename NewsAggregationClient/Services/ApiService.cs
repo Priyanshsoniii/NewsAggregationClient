@@ -674,7 +674,48 @@ public class ApiService : IApiService
                 };
             }
 
-            var settings = JsonSerializer.Deserialize<NotificationSettings>(responseContent, _jsonOptions);
+            // Parse the API response structure
+            var apiResponse = JsonSerializer.Deserialize<NotificationSettingsResponse>(responseContent, _jsonOptions);
+            
+            if (apiResponse?.Settings == null)
+            {
+                return new ApiResponse<NotificationSettings>
+                {
+                    Success = false,
+                    Message = "Invalid response format",
+                    Errors = new List<string> { "No settings found in response" }
+                };
+            }
+
+            // Map the API response to NotificationSettings object
+            var settings = new NotificationSettings
+            {
+                EmailNotifications = true, // Default to true as per API response
+                BusinessNotifications = false,
+                EntertainmentNotifications = false,
+                SportsNotifications = false,
+                TechnologyNotifications = false,
+                GeneralNotifications = false,
+                PoliticsNotifications = false,
+                GamesNotifications = false,
+                SongsNotifications = false,
+                FestivalNotifications = false,
+                MiscellaneousNotifications = false
+            };
+
+            // Map category settings based on categoryId
+            foreach (var categorySetting in apiResponse.Settings)
+            {
+                if (categorySetting.CategoryName.Equals("Keywords", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Handle keywords separately if needed
+                    continue;
+                }
+
+                // Dynamic mapping - store all categories in the dictionary
+                settings.SetCategoryNotification(categorySetting.CategoryName, categorySetting.IsEnabled);
+            }
+
             return new ApiResponse<NotificationSettings>
             {
                 Success = true,
