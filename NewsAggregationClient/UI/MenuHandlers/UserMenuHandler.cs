@@ -101,8 +101,15 @@ public class UserMenuHandler : IMenuHandler
 
     private async Task ShowHeadlinesByDateAsync(UserDto user, string dateOption)
     {
-        DateTime? fromDate = dateOption == "today" ? DateTime.Today : null;
-        DateTime? toDate = dateOption == "today" ? DateTime.Today.AddDays(1).AddSeconds(-1) : null;
+        DateTime? fromDate = null;
+        DateTime? toDate = null;
+        bool isToday = dateOption == "today";
+
+        if (isToday)
+        {
+            fromDate = DateTime.Today;
+            toDate = DateTime.Today.AddDays(1).AddSeconds(-1);
+        }
 
         var categories = await _apiService.GetCategoriesAsync();
         if (categories == null || categories.Count == 0)
@@ -127,8 +134,8 @@ public class UserMenuHandler : IMenuHandler
                 continue;
             }
 
-            var category = categories[index - 1].Name; // Remove .ToLower() to preserve original case
-            await DisplayNewsArticlesAsync(user, category, fromDate, toDate);
+            var category = categories[index - 1].Name;
+            await DisplayNewsArticlesAsync(user, category, fromDate, toDate, isToday);
             return;
         }
     }
@@ -194,8 +201,8 @@ public class UserMenuHandler : IMenuHandler
                     continue;
                 }
 
-                            var category = categories[index - 1].Name; // Remove .ToLower() to preserve original case
-            await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1));
+                var category = categories[index - 1].Name; 
+                await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1), false);
                 return;
             }
         }
@@ -206,14 +213,18 @@ public class UserMenuHandler : IMenuHandler
         }
     }
 
-    private async Task DisplayNewsArticlesAsync(UserDto user, string category, DateTime? fromDate = null, DateTime? toDate = null)
+    private async Task DisplayNewsArticlesAsync(UserDto user, string category, DateTime? fromDate = null, DateTime? toDate = null, bool isToday = false)
     {
         try
         {
             _console.WriteLine("Loading headlines...", ConsoleColor.Yellow);
 
             ApiResponse<NewsResponse> response;
-            if (fromDate != null && toDate != null)
+            if (isToday)
+            {
+                response = await _apiService.GetHeadlinesAsync(category);
+            }
+            else if (fromDate != null && toDate != null)
             {
                 response = await _apiService.GetHeadlinesByDateRangeAsync(category, fromDate.Value, toDate.Value);
             }
