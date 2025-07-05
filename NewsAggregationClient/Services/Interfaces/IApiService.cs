@@ -14,6 +14,7 @@ public interface IApiService
   //  Task<ApiResponse<object>> AddNewsCategoryAsync(AddCategoryRequest request);
 
     Task<ApiResponse<NewsResponse>> GetHeadlinesAsync(string category = "all", DateTime? date = null);
+    Task<List<NewsArticle>> GetHeadlinesSimpleAsync();
     Task<ApiResponse<NewsResponse>> GetHeadlinesByDateRangeAsync(string category, DateTime startDate, DateTime endDate);
     Task<ApiResponse<NewsResponse>> SearchNewsAsync(NewsAggregationClient.Models.ClientModels.SearchRequest request);
     Task<ApiResponse<List<SavedArticle>>> GetSavedArticlesAsync(int userId);

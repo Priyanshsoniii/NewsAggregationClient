@@ -151,11 +151,8 @@ public class ApiService : IApiService
     {
         try
         {
-
             var url = "api/News/headlines/today";
-
             var response = await _httpClient.GetAsync(url);
-            var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
@@ -163,66 +160,47 @@ public class ApiService : IApiService
                 {
                     Success = false,
                     Message = $"Failed to fetch headlines: {response.ReasonPhrase}",
-                    Errors = new List<string> { responseContent }
+                    Errors = new List<string> { await response.Content.ReadAsStringAsync() }
                 };
             }
 
-            List<NewsArticle> articles = new();
-            try
+            // Direct deserialization to the API response format
+            var apiResponse = await response.Content.ReadFromJsonAsync<HeadlinesApiResponse>(_jsonOptions);
+            
+            if (apiResponse?.Headlines == null)
             {
-                // Parse the API response format
-                using (var doc = JsonDocument.Parse(responseContent))
+                return new ApiResponse<NewsResponse>
                 {
-                    var root = doc.RootElement;
-                    Console.WriteLine($"DEBUG: Root element has properties: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
-                    
-                    if (root.TryGetProperty("headlines", out var headlinesElement) && headlinesElement.ValueKind == JsonValueKind.Array)
-                    {
-                        Console.WriteLine($"DEBUG: Found headlines array with {headlinesElement.GetArrayLength()} items");
-                        var headlineDtos = JsonSerializer.Deserialize<List<HeadlineDto>>(headlinesElement.GetRawText(), _jsonOptions) ?? new List<HeadlineDto>();
-                        Console.WriteLine($"DEBUG: Deserialized {headlineDtos.Count} headline DTOs");
-                        
-                        // Convert HeadlineDto to NewsArticle
-                        articles = headlineDtos.Select(dto => new NewsArticle
-                        {
-                            Id = dto.Id,
-                            Title = dto.Title,
-                            Description = dto.Description,
-                            Url = dto.Url,
-                            Source = dto.Source,
-                            CategoryId = dto.CategoryId,
-                            PublishedAt = dto.PublishedAt,
-                            CreatedAt = dto.PublishedAt, // Use PublishedAt as fallback
-                            Likes = dto.Likes,
-                            Dislikes = dto.Dislikes,
-                            Category = new Category
-                            {
-                                Id = dto.CategoryId,
-                                Name = dto.CategoryName,
-                                Description = dto.CategoryName,
-                                IsActive = true,
-                                CreatedAt = DateTime.Now
-                            },
-                            SavedByUsers = new List<object>(),
-                            IsSaved = false
-                        }).ToList();
-                        
-                        Console.WriteLine($"DEBUG: Converted to {articles.Count} NewsArticle objects");
-                        Console.WriteLine($"DEBUG: First few category names: {string.Join(", ", articles.Take(5).Select(a => a.Category?.Name))}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"DEBUG: No headlines property found or not an array. Available properties: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
-                    }
-                }
+                    Success = false,
+                    Message = "Invalid response format",
+                    Errors = new List<string> { "No headlines found in response" }
+                };
             }
-            catch (Exception ex)
+
+            // Simple mapping to NewsArticle
+            var articles = apiResponse.Headlines.Select(h => new NewsArticle
             {
-                // Log the error for debugging
-                Console.WriteLine($"Error parsing headlines: {ex.Message}");
-                Console.WriteLine($"DEBUG: Response content: {responseContent}");
-                articles = new List<NewsArticle>();
-            }
+                Id = h.Id,
+                Title = h.Title,
+                Description = h.Description,
+                Url = h.Url,
+                Source = h.Source,
+                CategoryId = h.CategoryId,
+                PublishedAt = h.PublishedAt,
+                CreatedAt = h.PublishedAt,
+                Likes = h.Likes,
+                Dislikes = h.Dislikes,
+                Category = new Category
+                {
+                    Id = h.CategoryId,
+                    Name = h.CategoryName,
+                    Description = h.CategoryName,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                },
+                SavedByUsers = new List<object>(),
+                IsSaved = false
+            }).ToList();
 
             var newsResponse = new NewsResponse
             {
@@ -247,6 +225,52 @@ public class ApiService : IApiService
                 Message = "Network error occurred",
                 Errors = new List<string> { ex.Message }
             };
+        }
+    }
+
+    // Super simple version - if you want to eliminate wrapper classes entirely
+    public async Task<List<NewsArticle>> GetHeadlinesSimpleAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("api/News/headlines/today");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Failed to fetch headlines: {response.ReasonPhrase}");
+                return new List<NewsArticle>();
+            }
+
+            var apiResponse = await response.Content.ReadFromJsonAsync<HeadlinesApiResponse>(_jsonOptions);
+            
+            return apiResponse?.Headlines?.Select(h => new NewsArticle
+            {
+                Id = h.Id,
+                Title = h.Title,
+                Description = h.Description,
+                Url = h.Url,
+                Source = h.Source,
+                CategoryId = h.CategoryId,
+                PublishedAt = h.PublishedAt,
+                CreatedAt = h.PublishedAt,
+                Likes = h.Likes,
+                Dislikes = h.Dislikes,
+                Category = new Category
+                {
+                    Id = h.CategoryId,
+                    Name = h.CategoryName,
+                    Description = h.CategoryName,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                },
+                SavedByUsers = new List<object>(),
+                IsSaved = false
+            }).ToList() ?? new List<NewsArticle>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching headlines: {ex.Message}");
+            return new List<NewsArticle>();
         }
     }
 

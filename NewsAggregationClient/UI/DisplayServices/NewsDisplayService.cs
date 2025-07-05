@@ -39,7 +39,6 @@ public class NewsDisplayService : IDisplayService
         _console.WriteLine($"Source: {article.Source}", ConsoleColor.Green);
         _console.WriteLine($"URL: {article.Url}", ConsoleColor.Blue);
         _console.WriteLine($"Category: {article.Category?.Name ?? "N/A"}", ConsoleColor.Magenta);
-        _console.WriteLine($"Published: {article.PublishedAt:yyyy-MM-dd HH:mm}", ConsoleColor.Yellow);
 
         if (article.Likes > 0 || article.Dislikes > 0)
         {

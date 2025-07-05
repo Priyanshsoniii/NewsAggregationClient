@@ -65,3 +65,11 @@ public class Category
     public List<object> UserNotificationSettings { get; set; }
 }
 
+// Simple API response wrapper that matches the actual API response
+public class HeadlinesApiResponse
+{
+    public bool Success { get; set; }
+    public int Count { get; set; }
+    public List<HeadlineDto> Headlines { get; set; } = new();
+}
+
