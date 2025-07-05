@@ -127,7 +127,7 @@ public class UserMenuHandler : IMenuHandler
                 continue;
             }
 
-            var category = categories[index - 1].Name.ToLower();
+            var category = categories[index - 1].Name; // Remove .ToLower() to preserve original case
             await DisplayNewsArticlesAsync(user, category, fromDate, toDate);
             return;
         }
@@ -194,8 +194,8 @@ public class UserMenuHandler : IMenuHandler
                     continue;
                 }
 
-                var category = categories[index - 1].Name.ToLower();
-                await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1));
+                            var category = categories[index - 1].Name; // Remove .ToLower() to preserve original case
+            await DisplayNewsArticlesAsync(user, category, startDate, endDate.AddDays(1).AddSeconds(-1));
                 return;
             }
         }
@@ -224,34 +224,50 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
             {
-                while (true)
+                var articles = response.Data.Articles;
+                
+                if (!string.IsNullOrEmpty(category) && category != "all")
                 {
-                    _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
-                    _newsDisplay.DisplayNewsArticles(response.Data.Articles, "Headlines");
-                    _consoleDisplay.DisplayArticleActionMenu();
-
-                    _console.Write("Enter your choice: ");
-                    var choice = _console.ReadLine();
-
-                    switch (choice)
+                    articles = articles
+                        .Where(a => a.Category?.Name?.Equals(category, StringComparison.OrdinalIgnoreCase) == true)
+                        .ToList();
+                }
+                if (articles.Any())
+                {
+                    while (true)
                     {
-                        case "1":
-                            return; // Back
-                        case "2":
-                            _console.WriteLine("Logging out...", ConsoleColor.Yellow);
-                            Environment.Exit(0);
-                            break;
-                        case "3":
-                                await SaveArticleAsync(user);
-                            break;
-                        case "4":
-                            await ReportArticleAsync(user);
-                            break;
-                        default:
-                            _console.DisplayError("Invalid choice. Please select 1-4.");
-                            _console.PressAnyKeyToContinue();
-                            break;
+                        _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
+                        _newsDisplay.DisplayNewsArticles(articles, "Headlines");
+                        _consoleDisplay.DisplayArticleActionMenu();
+
+                        _console.Write("Enter your choice: ");
+                        var choice = _console.ReadLine();
+
+                        switch (choice)
+                        {
+                            case "1":
+                                return; // Back
+                            case "2":
+                                _console.WriteLine("Logging out...", ConsoleColor.Yellow);
+                                Environment.Exit(0);
+                                break;
+                            case "3":
+                                    await SaveArticleAsync(user);
+                                break;
+                            case "4":
+                                await ReportArticleAsync(user);
+                                break;
+                            default:
+                                _console.DisplayError("Invalid choice. Please select 1-4.");
+                                _console.PressAnyKeyToContinue();
+                                break;
+                        }
                     }
+                }
+                else
+                {
+                    _console.DisplayError("No headlines found for the selected criteria.");
+                    _console.PressAnyKeyToContinue();
                 }
             }
             else if (response.Success && (response.Data == null || response.Data.Articles == null || !response.Data.Articles.Any()))

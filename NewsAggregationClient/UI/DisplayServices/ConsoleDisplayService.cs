@@ -37,6 +37,7 @@ public class ConsoleDisplayService
             "Hide Article",
             "Hide Category",
             "Manage Filtered Keywords",
+            "Trigger News Aggregation",
             "Logout"
         };
 

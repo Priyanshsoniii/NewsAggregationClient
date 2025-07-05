@@ -53,16 +53,16 @@ public class AdminMenuHandler : IMenuHandler
                     await ViewReportedArticlesAsync();
                     break;
                 case "6":
-                    await ViewReportedArticlesAsync();
-                    break;
-                case "7":
                     await HideArticleAsync();
                     break;
-                case "8":
+                case "7":
                     await HideCategoryAsync();
                     break;
-                case "9":
+                case "8":
                     await ManageFilteredKeywordsAsync();
+                    break;
+                case "9":
+                    await TriggerNewsAggregationAsync();
                     break;
                 case "10":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
@@ -487,6 +487,33 @@ public class AdminMenuHandler : IMenuHandler
         catch (Exception ex)
         {
             _console.DisplayError($"Error adding filtered keyword: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task TriggerNewsAggregationAsync()
+    {
+        try
+        {
+            _console.WriteLine("Triggering news aggregation...", ConsoleColor.Yellow);
+            _console.WriteLine("This will fetch the latest news from external sources and save them to the database.", ConsoleColor.Cyan);
+            _console.WriteLine("This process may take a few moments...", ConsoleColor.Cyan);
+
+            var response = await _apiService.TriggerNewsAggregationAsync();
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess("News aggregation completed successfully!");
+                _console.WriteLine("New articles have been fetched and saved to the database.", ConsoleColor.Green);
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to trigger news aggregation.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error triggering news aggregation: {ex.Message}");
         }
         _console.PressAnyKeyToContinue();
     }

@@ -170,19 +170,58 @@ public class ApiService : IApiService
             List<NewsArticle> articles = new();
             try
             {
-                articles = JsonSerializer.Deserialize<List<NewsArticle>>(responseContent, _jsonOptions) ?? new List<NewsArticle>();
-            }
-            catch
-            {
-                // fallback: try to parse as { "headlines": [...] }
+                // Parse the API response format
                 using (var doc = JsonDocument.Parse(responseContent))
                 {
                     var root = doc.RootElement;
+                    Console.WriteLine($"DEBUG: Root element has properties: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
+                    
                     if (root.TryGetProperty("headlines", out var headlinesElement) && headlinesElement.ValueKind == JsonValueKind.Array)
                     {
-                        articles = JsonSerializer.Deserialize<List<NewsArticle>>(headlinesElement.GetRawText(), _jsonOptions) ?? new List<NewsArticle>();
+                        Console.WriteLine($"DEBUG: Found headlines array with {headlinesElement.GetArrayLength()} items");
+                        var headlineDtos = JsonSerializer.Deserialize<List<HeadlineDto>>(headlinesElement.GetRawText(), _jsonOptions) ?? new List<HeadlineDto>();
+                        Console.WriteLine($"DEBUG: Deserialized {headlineDtos.Count} headline DTOs");
+                        
+                        // Convert HeadlineDto to NewsArticle
+                        articles = headlineDtos.Select(dto => new NewsArticle
+                        {
+                            Id = dto.Id,
+                            Title = dto.Title,
+                            Description = dto.Description,
+                            Url = dto.Url,
+                            Source = dto.Source,
+                            CategoryId = dto.CategoryId,
+                            PublishedAt = dto.PublishedAt,
+                            CreatedAt = dto.PublishedAt, // Use PublishedAt as fallback
+                            Likes = dto.Likes,
+                            Dislikes = dto.Dislikes,
+                            Category = new Category
+                            {
+                                Id = dto.CategoryId,
+                                Name = dto.CategoryName,
+                                Description = dto.CategoryName,
+                                IsActive = true,
+                                CreatedAt = DateTime.Now
+                            },
+                            SavedByUsers = new List<object>(),
+                            IsSaved = false
+                        }).ToList();
+                        
+                        Console.WriteLine($"DEBUG: Converted to {articles.Count} NewsArticle objects");
+                        Console.WriteLine($"DEBUG: First few category names: {string.Join(", ", articles.Take(5).Select(a => a.Category?.Name))}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"DEBUG: No headlines property found or not an array. Available properties: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                Console.WriteLine($"Error parsing headlines: {ex.Message}");
+                Console.WriteLine($"DEBUG: Response content: {responseContent}");
+                articles = new List<NewsArticle>();
             }
 
             var newsResponse = new NewsResponse
@@ -1284,6 +1323,43 @@ public class ApiService : IApiService
                     Success = false,
                     Message = "Failed to send test email.",
                     Errors = new List<string> { responseContent }
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<bool>> TriggerNewsAggregationAsync()
+    {
+        try
+        {
+            var response = await _httpClient.PostAsync("api/Admin/aggregate-news", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "News aggregation triggered successfully",
+                    Data = true
+                };
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Failed to trigger news aggregation: {response.ReasonPhrase}",
+                    Errors = new List<string> { errorContent }
                 };
             }
         }

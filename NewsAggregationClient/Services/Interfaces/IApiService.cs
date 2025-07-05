@@ -44,4 +44,5 @@ public interface IApiService
     Task<ApiResponse<bool>> MarkArticleAsReadAsync(int articleId);
     Task<List<Category>> GetCategoriesAsync();
     Task<ApiResponse<bool>> SendTestEmailNotificationAsync();
+    Task<ApiResponse<bool>> TriggerNewsAggregationAsync();
 }
