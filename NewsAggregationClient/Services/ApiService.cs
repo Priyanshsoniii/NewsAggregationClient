@@ -440,10 +440,42 @@ public class ApiService : IApiService
     {
         try
         {
-            var json = JsonSerializer.Serialize(request, _jsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            // Build query parameters
+            var queryParams = new List<string>();
+            queryParams.Add($"query={Uri.EscapeDataString(request.Query)}");
+            
+            if (request.FromDate.HasValue)
+            {
+                queryParams.Add($"startDate={request.FromDate.Value:yyyy-MM-dd}");
+            }
+            
+            if (request.ToDate.HasValue)
+            {
+                queryParams.Add($"endDate={request.ToDate.Value:yyyy-MM-dd}");
+            }
+            
+            if (!string.IsNullOrEmpty(request.SortBy))
+            {
+                queryParams.Add($"sortBy={Uri.EscapeDataString(request.SortBy)}");
+            }
+            
+            if (!string.IsNullOrEmpty(request.SortOrder))
+            {
+                queryParams.Add($"sortOrder={Uri.EscapeDataString(request.SortOrder)}");
+            }
+            
+            if (request.Page > 0)
+            {
+                queryParams.Add($"page={request.Page}");
+            }
+            
+            if (request.PageSize > 0)
+            {
+                queryParams.Add($"pageSize={request.PageSize}");
+            }
 
-            var response = await _httpClient.PostAsync("api/News/search", content);
+            var url = $"api/News/search?{string.Join("&", queryParams)}";
+            var response = await _httpClient.GetAsync(url);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
@@ -456,19 +488,8 @@ public class ApiService : IApiService
                 };
             }
 
-            List<NewsArticle> articles = new();
-            using (var doc = JsonDocument.Parse(responseContent))
-            {
-                var root = doc.RootElement;
-                if (root.TryGetProperty("articles", out var articlesElement) && articlesElement.ValueKind == JsonValueKind.Array)
-                {
-                    articles = JsonSerializer.Deserialize<List<NewsArticle>>(articlesElement.GetRawText(), _jsonOptions) ?? new List<NewsArticle>();
-                }
-                else if (root.TryGetProperty("data", out var dataElement) && dataElement.TryGetProperty("articles", out var dataArticlesElement) && dataArticlesElement.ValueKind == JsonValueKind.Array)
-                {
-                    articles = JsonSerializer.Deserialize<List<NewsArticle>>(dataArticlesElement.GetRawText(), _jsonOptions) ?? new List<NewsArticle>();
-                }
-            }
+            // The API returns a direct array of articles
+            var articles = JsonSerializer.Deserialize<List<NewsArticle>>(responseContent, _jsonOptions) ?? new List<NewsArticle>();
 
             var newsResponse = new NewsResponse
             {
@@ -708,6 +729,63 @@ public class ApiService : IApiService
                 {
                     Success = false,
                     Message = "Failed to update notification settings",
+                    Data = false
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<bool>> ToggleNotificationCategoryAsync(int categoryId)
+    {
+        try
+        {
+            var response = await _httpClient.PatchAsync($"api/Notification/settings/{categoryId}/toggle", null);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                
+                var message = "Notification category toggled successfully";
+                if (root.TryGetProperty("message", out var messageProp))
+                {
+                    message = messageProp.GetString() ?? message;
+                }
+
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = message,
+                    Data = true
+                };
+            }
+            else
+            {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("message", out var messageProp))
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Success = false,
+                        Message = messageProp.GetString() ?? "Failed to toggle notification category",
+                        Data = false
+                    };
+                }
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Failed to toggle notification category",
                     Data = false
                 };
             }
@@ -1221,7 +1299,7 @@ public class ApiService : IApiService
     {
         try
         {
-            var response = await _httpClient.PostAsync($"api/News/{articleId}/dislike", null);
+            var response = await _httpClient.PostAsync($"api/News/{articleId}/unlike", null);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)

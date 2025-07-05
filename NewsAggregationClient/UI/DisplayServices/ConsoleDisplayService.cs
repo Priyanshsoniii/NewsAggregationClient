@@ -79,7 +79,7 @@ public class ConsoleDisplayService
         {
             "Today",
             "Date range",
-            "Logout"
+            "Back"
         };
 
         _console.WriteLine("Please choose the options below", ConsoleColor.Yellow);

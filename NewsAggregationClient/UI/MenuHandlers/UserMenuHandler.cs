@@ -263,13 +263,19 @@ public class UserMenuHandler : IMenuHandler
                                 Environment.Exit(0);
                                 break;
                             case "3":
-                                    await SaveArticleAsync(user);
+                                await SaveArticleAsync(user);
                                 break;
                             case "4":
                                 await ReportArticleAsync(user);
                                 break;
+                            case "5":
+                                await LikeArticleAsync(user);
+                                break;
+                            case "6":
+                                await DislikeArticleAsync(user);
+                                break;
                             default:
-                                _console.DisplayError("Invalid choice. Please select 1-4.");
+                                _console.DisplayError("Invalid choice. Please select 1-6.");
                                 _console.PressAnyKeyToContinue();
                                 break;
                         }
@@ -538,8 +544,14 @@ public class UserMenuHandler : IMenuHandler
                         case "4":
                             await ReportArticleAsync(user);
                             break;
+                        case "5":
+                            await LikeArticleAsync(user);
+                            break;
+                        case "6":
+                            await DislikeArticleAsync(user);
+                            break;
                         default:
-                            _console.DisplayError("Invalid choice. Please select 1-4.");
+                            _console.DisplayError("Invalid choice. Please select 1-6.");
                             _console.PressAnyKeyToContinue();
                             break;
                     }
@@ -591,8 +603,14 @@ public class UserMenuHandler : IMenuHandler
                         case "4":
                             await ReportArticleAsync(user);
                             break;
+                        case "5":
+                            await LikeArticleAsync(user);
+                            break;
+                        case "6":
+                            await DislikeArticleAsync(user);
+                            break;
                         default:
-                            _console.DisplayError("Invalid choice. Please select 1-4.");
+                            _console.DisplayError("Invalid choice. Please select 1-6.");
                             _console.PressAnyKeyToContinue();
                             break;
                     }
@@ -649,6 +667,76 @@ public class UserMenuHandler : IMenuHandler
         catch (Exception ex)
         {
             _console.DisplayError($"Error reporting article: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task LikeArticleAsync(UserDto user)
+    {
+        try
+        {
+            _console.Write("Enter Article ID to like: ");
+            var input = _console.ReadLine();
+
+            if (!int.TryParse(input, out int articleId) || articleId <= 0)
+            {
+                _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.WriteLine("Liking article...", ConsoleColor.Yellow);
+
+            var response = await _apiService.LikeArticleAsync(articleId);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Article {articleId} liked successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to like article.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error liking article: {ex.Message}");
+        }
+
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task DislikeArticleAsync(UserDto user)
+    {
+        try
+        {
+            _console.Write("Enter Article ID to dislike: ");
+            var input = _console.ReadLine();
+
+            if (!int.TryParse(input, out int articleId) || articleId <= 0)
+            {
+                _console.DisplayError("Invalid Article ID. Please enter a valid positive number.");
+                _console.PressAnyKeyToContinue();
+                return;
+            }
+
+            _console.WriteLine("Disliking article...", ConsoleColor.Yellow);
+
+            var response = await _apiService.DislikeArticleAsync(articleId);
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess($"Article {articleId} disliked successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to dislike article.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error disliking article: {ex.Message}");
         }
 
         _console.PressAnyKeyToContinue();
@@ -750,48 +838,39 @@ public class UserMenuHandler : IMenuHandler
             switch (choice)
             {
                 case "1":
+                    // Email notifications - use the old method for now
                     settings.EmailNotifications = !settings.EmailNotifications;
                     await UpdateNotificationSettingsAsync(settings);
                     break;
                 case "2":
-                    settings.BusinessNotifications = !settings.BusinessNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(1); // Business
                     break;
                 case "3":
-                    settings.EntertainmentNotifications = !settings.EntertainmentNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(2); // Entertainment
                     break;
                 case "4":
-                    settings.SportsNotifications = !settings.SportsNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(3); // Sports
                     break;
                 case "5":
-                    settings.TechnologyNotifications = !settings.TechnologyNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(4); // Technology
                     break;
                 case "6":
-                    settings.GeneralNotifications = !settings.GeneralNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(5); // General
                     break;
                 case "7":
-                    settings.PoliticsNotifications = !settings.PoliticsNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(6); // Politics
                     break;
                 case "8":
-                    settings.GamesNotifications = !settings.GamesNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(7); // Games
                     break;
                 case "9":
-                    settings.SongsNotifications = !settings.SongsNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(9); // Songs
                     break;
                 case "10":
-                    settings.FestivalNotifications = !settings.FestivalNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(10); // Festival
                     break;
                 case "11":
-                    settings.MiscellaneousNotifications = !settings.MiscellaneousNotifications;
-                    await UpdateNotificationSettingsAsync(settings);
+                    await ToggleNotificationCategoryAsync(11); // Miscellaneous
                     break;
                 case "12":
                     await ConfigureKeywordsAsync(settings);
@@ -811,6 +890,27 @@ public class UserMenuHandler : IMenuHandler
                     break;
             }
         }
+    }
+
+    private async Task ToggleNotificationCategoryAsync(int categoryId)
+    {
+        try
+        {
+            var response = await _apiService.ToggleNotificationCategoryAsync(categoryId);
+            if (response.Success)
+            {
+                _console.WriteLine("Settings updated successfully!", ConsoleColor.Green);
+            }
+            else
+            {
+                _console.DisplayError($"Failed to update settings: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error updating settings: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
     }
 
     private async Task UpdateNotificationSettingsAsync(NotificationSettings settings)

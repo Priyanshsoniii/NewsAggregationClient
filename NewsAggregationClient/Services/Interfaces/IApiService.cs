@@ -26,6 +26,7 @@ public interface IApiService
     Task<ApiResponse<bool>> AddNewsCategoryAsync(string categoryName, string description);
     Task<ApiResponse<NotificationSettings>> GetNotificationSettingsAsync();
     Task<ApiResponse<bool>> UpdateNotificationSettingsAsync(NotificationSettings settings);
+    Task<ApiResponse<bool>> ToggleNotificationCategoryAsync(int categoryId);
     Task<ApiResponse<List<NotificationResponse>>> GetNotificationsAsync();
     Task<ApiResponse<bool>> MarkNotificationAsReadAsync(int notificationId);
     //void SetAuthToken(string token);
