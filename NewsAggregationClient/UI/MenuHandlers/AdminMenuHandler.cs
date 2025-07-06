@@ -65,10 +65,13 @@ public class AdminMenuHandler : IMenuHandler
                     await TriggerNewsAggregationAsync();
                     break;
                 case "10":
+                    await FixInvalidCategoriesAsync();
+                    break;
+                case "11":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                     return;
                 default:
-                    _console.DisplayError("Invalid choice. Please select 1-10.");
+                    _console.DisplayError("Invalid choice. Please select 1-11.");
                     _console.PressAnyKeyToContinue();
                     break;
             }
@@ -514,6 +517,32 @@ public class AdminMenuHandler : IMenuHandler
         catch (Exception ex)
         {
             _console.DisplayError($"Error triggering news aggregation: {ex.Message}");
+        }
+        _console.PressAnyKeyToContinue();
+    }
+
+    private async Task FixInvalidCategoriesAsync()
+    {
+        try
+        {
+            _console.WriteLine("Fixing invalid categories...", ConsoleColor.Yellow);
+            _console.WriteLine("This will scan all articles and fix any that have invalid or missing categories.", ConsoleColor.Cyan);
+            _console.WriteLine("This process may take a few moments...", ConsoleColor.Cyan);
+
+            var response = await _apiService.FixInvalidCategoriesAsync();
+
+            if (response.Success)
+            {
+                _console.DisplaySuccess(response.Message ?? "Invalid categories fixed successfully!");
+            }
+            else
+            {
+                _console.DisplayError(response.Message ?? "Failed to fix invalid categories.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _console.DisplayError($"Error fixing invalid categories: {ex.Message}");
         }
         _console.PressAnyKeyToContinue();
     }

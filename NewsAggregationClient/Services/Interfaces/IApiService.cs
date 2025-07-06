@@ -39,4 +39,5 @@ public interface IApiService
     Task<List<Category>> GetCategoriesAsync();
     Task<ApiResponse<bool>> SendTestEmailNotificationAsync(string userEmail);
     Task<ApiResponse<bool>> TriggerNewsAggregationAsync();
+    Task<ApiResponse<bool>> FixInvalidCategoriesAsync();
 }

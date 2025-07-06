@@ -38,6 +38,7 @@ public class ConsoleDisplayService
             "Hide Category",
             "Manage Filtered Keywords",
             "Trigger News Aggregation",
+            "Fix Invalid Categories",
             "Logout"
         };
 

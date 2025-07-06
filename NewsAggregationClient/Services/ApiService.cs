@@ -1644,4 +1644,64 @@ public class ApiService : IApiService
             };
         }
     }
+
+    public async Task<ApiResponse<bool>> FixInvalidCategoriesAsync()
+    {
+        try
+        {
+            var response = await _httpClient.PostAsync("api/Admin/fix-categories", null);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("articlesFixed", out var fixedProp))
+                {
+                    var fixedCount = fixedProp.GetInt32();
+                    return new ApiResponse<bool>
+                    {
+                        Success = true,
+                        Message = $"Fixed {fixedCount} articles with invalid categories",
+                        Data = true
+                    };
+                }
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "Invalid categories fixed successfully",
+                    Data = true
+                };
+            }
+            else
+            {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("error", out var errorProp))
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Success = false,
+                        Message = errorProp.GetString() ?? "Failed to fix invalid categories",
+                        Data = false
+                    };
+                }
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Failed to fix invalid categories",
+                    Data = false
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
 }
