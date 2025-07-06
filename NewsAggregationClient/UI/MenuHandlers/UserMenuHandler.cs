@@ -900,29 +900,38 @@ public class UserMenuHandler : IMenuHandler
         var emailStatus = settings.EmailNotifications ? "[ENABLED]" : "[DISABLED]";
         _console.WriteLine($"1. Toggle Email Notifications {emailStatus}", ConsoleColor.White);
 
-        // Keywords and test email
-        var keywordStatus = !string.IsNullOrEmpty(settings.Keywords) ? "[CONFIGURED]" : "[NOT CONFIGURED]";
+        // Keywords and test email - Check server for current keywords first
+        var currentKeywords = new List<string>();
+        var hasKeywords = false;
+        
+        try
+        {
+            var keywordsResponse = await _apiService.GetCurrentKeywordsAsync();
+            if (keywordsResponse.Success && keywordsResponse.Data.Any())
+            {
+                currentKeywords = keywordsResponse.Data;
+                hasKeywords = true;
+            }
+        }
+        catch
+        {
+            // Fallback to local settings if server call fails
+            hasKeywords = !string.IsNullOrEmpty(settings.Keywords);
+        }
+        
+        var keywordStatus = hasKeywords ? "[CONFIGURED]" : "[NOT CONFIGURED]";
         _console.WriteLine($"2. Configure Keywords {keywordStatus}", ConsoleColor.White);
         
         // Show current keywords if they exist
-        if (!string.IsNullOrEmpty(settings.Keywords))
+        if (hasKeywords)
         {
-            _console.WriteLine($"   Current keywords: {settings.Keywords}", ConsoleColor.Cyan);
-        }
-        else
-        {
-            // Try to fetch current keywords from server
-            try
+            if (currentKeywords.Any())
             {
-                var keywordsResponse = await _apiService.GetCurrentKeywordsAsync();
-                if (keywordsResponse.Success && keywordsResponse.Data.Any())
-                {
-                    _console.WriteLine($"   Current keywords: {string.Join(", ", keywordsResponse.Data)}", ConsoleColor.Cyan);
-                }
+                _console.WriteLine($"   Current keywords: {string.Join(", ", currentKeywords)}", ConsoleColor.Cyan);
             }
-            catch
+            else if (!string.IsNullOrEmpty(settings.Keywords))
             {
-                // Ignore errors when fetching keywords
+                _console.WriteLine($"   Current keywords: {settings.Keywords}", ConsoleColor.Cyan);
             }
         }
         
