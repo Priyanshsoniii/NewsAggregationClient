@@ -245,6 +245,9 @@ public class UserMenuHandler : IMenuHandler
                 }
                 if (articles.Any())
                 {
+                    // Mark articles as read when they are displayed
+                    await MarkArticlesAsReadAsync(articles);
+                    
                     while (true)
                     {
                         _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
@@ -302,6 +305,25 @@ public class UserMenuHandler : IMenuHandler
         {
             _console.DisplayError($"Error loading headlines: {ex.Message}");
             _console.PressAnyKeyToContinue();
+        }
+    }
+
+    private async Task MarkArticlesAsReadAsync(List<NewsArticle> articles)
+    {
+        try
+        {
+            // Mark all displayed articles as read
+            var tasks = articles.Select(article => _apiService.MarkArticleAsReadAsync(article.Id));
+            await Task.WhenAll(tasks);
+            
+            // Log the read tracking (optional)
+            _console.WriteLine($"Marked {articles.Count} articles as read", ConsoleColor.Gray);
+        }
+        catch (Exception ex)
+        {
+            // Don't show error to user, just log it silently
+            // This prevents read tracking from breaking the main functionality
+            _console.WriteLine($"Note: Read tracking failed: {ex.Message}", ConsoleColor.Gray);
         }
     }
 
@@ -385,6 +407,27 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Any())
             {
+                // Mark saved articles as read when they are displayed
+                var articles = response.Data.Select(sa => new NewsArticle 
+                { 
+                    Id = sa.Id, 
+                    Title = sa.Title, 
+                    Description = sa.Description, 
+                    Url = sa.Url, 
+                    Source = sa.Source, 
+                    PublishedAt = sa.PublishedAt, 
+                    CategoryId = sa.CategoryId,
+                    Category = new Category 
+                    { 
+                        Id = sa.CategoryId, 
+                        Name = sa.CategoryName, 
+                        Description = sa.CategoryName,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    }
+                }).ToList();
+                await MarkArticlesAsReadAsync(articles);
+                
                 while (true)
                 {
                     _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
@@ -521,6 +564,9 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
             {
+                // Mark search results as read when they are displayed
+                await MarkArticlesAsReadAsync(response.Data.Articles);
+                
                 while (true)
                 {
                     _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
@@ -580,6 +626,9 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
             {
+                // Mark personalized articles as read when they are displayed
+                await MarkArticlesAsReadAsync(response.Data.Articles);
+                
                 while (true)
                 {
                     _displayService.DisplayUserWelcome(user.Username, DateTime.Now);

@@ -834,13 +834,9 @@ public class ApiService : IApiService
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            Console.WriteLine($"Sending keywords to server: {json}"); // Debug log
-
             // Call the general keywords endpoint
             var response = await _httpClient.PutAsync("api/Notification/settings/keywords", content);
             var responseContent = await response.Content.ReadAsStringAsync();
-
-            Console.WriteLine($"Server response: {response.StatusCode} - {responseContent}"); // Debug log
 
             if (response.IsSuccessStatusCode)
             {
@@ -867,7 +863,6 @@ public class ApiService : IApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating keywords: {ex.Message}"); // Debug log
             return new ApiResponse<bool>
             {
                 Success = false,
@@ -1342,7 +1337,7 @@ public class ApiService : IApiService
     {
         try
         {
-            var response = await _httpClient.GetAsync("api/News/personalized");
+            var response = await _httpClient.GetAsync("api/News/recommendations");
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
@@ -1359,7 +1354,11 @@ public class ApiService : IApiService
             using (var doc = JsonDocument.Parse(responseContent))
             {
                 var root = doc.RootElement;
-                if (root.TryGetProperty("articles", out var articlesElement) && articlesElement.ValueKind == JsonValueKind.Array)
+                if (root.TryGetProperty("recommendations", out var recommendationsElement) && recommendationsElement.ValueKind == JsonValueKind.Array)
+                {
+                    articles = JsonSerializer.Deserialize<List<NewsArticle>>(recommendationsElement.GetRawText(), _jsonOptions) ?? new List<NewsArticle>();
+                }
+                else if (root.TryGetProperty("articles", out var articlesElement) && articlesElement.ValueKind == JsonValueKind.Array)
                 {
                     articles = JsonSerializer.Deserialize<List<NewsArticle>>(articlesElement.GetRawText(), _jsonOptions) ?? new List<NewsArticle>();
                 }
