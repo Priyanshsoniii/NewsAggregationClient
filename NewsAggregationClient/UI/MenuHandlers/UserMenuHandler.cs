@@ -848,7 +848,7 @@ public class UserMenuHandler : IMenuHandler
             }
 
             // Display dynamic notification settings menu
-            DisplayDynamicNotificationSettingsMenu(settings, categories);
+            await DisplayDynamicNotificationSettingsMenu(settings, categories);
 
             _console.Write("Enter your choice: ");
             var choice = _console.ReadLine();
@@ -891,7 +891,7 @@ public class UserMenuHandler : IMenuHandler
         }
     }
 
-    private void DisplayDynamicNotificationSettingsMenu(NotificationSettings settings, List<Category> categories)
+    private async Task DisplayDynamicNotificationSettingsMenu(NotificationSettings settings, List<Category> categories)
     {
         _console.WriteLine("Notification Settings:", ConsoleColor.Yellow);
         _console.WriteLine("");
@@ -901,7 +901,31 @@ public class UserMenuHandler : IMenuHandler
         _console.WriteLine($"1. Toggle Email Notifications {emailStatus}", ConsoleColor.White);
 
         // Keywords and test email
-        _console.WriteLine("2. Configure Keywords", ConsoleColor.White);
+        var keywordStatus = !string.IsNullOrEmpty(settings.Keywords) ? "[CONFIGURED]" : "[NOT CONFIGURED]";
+        _console.WriteLine($"2. Configure Keywords {keywordStatus}", ConsoleColor.White);
+        
+        // Show current keywords if they exist
+        if (!string.IsNullOrEmpty(settings.Keywords))
+        {
+            _console.WriteLine($"   Current keywords: {settings.Keywords}", ConsoleColor.Cyan);
+        }
+        else
+        {
+            // Try to fetch current keywords from server
+            try
+            {
+                var keywordsResponse = await _apiService.GetCurrentKeywordsAsync();
+                if (keywordsResponse.Success && keywordsResponse.Data.Any())
+                {
+                    _console.WriteLine($"   Current keywords: {string.Join(", ", keywordsResponse.Data)}", ConsoleColor.Cyan);
+                }
+            }
+            catch
+            {
+                // Ignore errors when fetching keywords
+            }
+        }
+        
         _console.WriteLine("3. Send Test Email", ConsoleColor.White);
         _console.WriteLine("4. Back to Main Menu", ConsoleColor.White);
         _console.WriteLine("5. Logout", ConsoleColor.White);
@@ -971,13 +995,71 @@ public class UserMenuHandler : IMenuHandler
     private async Task ConfigureKeywordsAsync(NotificationSettings settings)
     {
         _console.WriteLine("Enter keywords (comma-separated): ", ConsoleColor.Yellow);
-        var keywords = _console.ReadLine();
+        _console.WriteLine("Example: tech, AI, business, sports", ConsoleColor.Gray);
+        _console.WriteLine("Enter 'clear' to remove all keywords", ConsoleColor.Gray);
+        var keywordsInput = _console.ReadLine();
         
-        if (!string.IsNullOrEmpty(keywords))
+        if (!string.IsNullOrEmpty(keywordsInput))
         {
-            settings.Keywords = keywords;
-            await UpdateNotificationSettingsAsync(settings);
+            try
+            {
+                // Handle clearing keywords
+                if (keywordsInput.Trim().ToLower() == "clear")
+                {
+                    var response = await _apiService.UpdateKeywordsAsync(new List<string>());
+                    if (response.Success)
+                    {
+                        _console.WriteLine("All keywords cleared successfully!", ConsoleColor.Green);
+                    }
+                    else
+                    {
+                        _console.DisplayError($"Failed to clear keywords: {response.Message}");
+                    }
+                }
+                else
+                {
+                    // Parse comma-separated keywords into a list
+                    var keywords = keywordsInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Where(k => !string.IsNullOrWhiteSpace(k))
+                        .Select(k => k.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    if (keywords.Any())
+                    {
+                        _console.WriteLine($"Processing {keywords.Count} keywords...", ConsoleColor.Yellow);
+                        
+                        // Call the proper API endpoint with JSON array format
+                        var response = await _apiService.UpdateKeywordsAsync(keywords);
+                        
+                        if (response.Success)
+                        {
+                            _console.WriteLine("Keywords updated successfully!", ConsoleColor.Green);
+                            _console.WriteLine($"Configured keywords: {string.Join(", ", keywords)}", ConsoleColor.Cyan);
+                            _console.WriteLine("You will now receive notifications for articles containing these keywords.", ConsoleColor.Green);
+                        }
+                        else
+                        {
+                            _console.DisplayError($"Failed to update keywords: {response.Message}");
+                        }
+                    }
+                    else
+                    {
+                        _console.DisplayError("No valid keywords entered. Please enter at least one keyword.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _console.DisplayError($"Error processing keywords: {ex.Message}");
+            }
         }
+        else
+        {
+            _console.DisplayError("No keywords entered.");
+        }
+        
+        _console.PressAnyKeyToContinue();
     }
 
     private async Task SendTestEmailNotificationAsync(UserDto user)

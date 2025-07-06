@@ -797,43 +797,158 @@ public class ApiService : IApiService
                 using var doc = JsonDocument.Parse(responseContent);
                 var root = doc.RootElement;
                 
-                var message = "Notification category toggled successfully";
-                if (root.TryGetProperty("message", out var messageProp))
-                {
-                    message = messageProp.GetString() ?? message;
-                }
-
-                return new ApiResponse<bool>
-                {
-                    Success = true,
-                    Message = message,
-                    Data = true
-                };
-            }
-            else
-            {
-                using var doc = JsonDocument.Parse(responseContent);
-                var root = doc.RootElement;
-                if (root.TryGetProperty("message", out var messageProp))
+                if (root.TryGetProperty("success", out var successProp) && successProp.GetBoolean())
                 {
                     return new ApiResponse<bool>
                     {
-                        Success = false,
-                        Message = messageProp.GetString() ?? "Failed to toggle notification category",
-                        Data = false
+                        Success = true,
+                        Message = "Notification category toggled successfully",
+                        Data = true
                     };
                 }
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    Message = "Failed to toggle notification category",
-                    Data = false
-                };
             }
+            
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Failed to toggle notification category",
+                Data = false
+            };
         }
         catch (Exception ex)
         {
             return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<bool>> UpdateKeywordsAsync(List<string> keywords)
+    {
+        try
+        {
+            var request = new { keywords = keywords };
+            var json = JsonSerializer.Serialize(request, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            Console.WriteLine($"Sending keywords to server: {json}"); // Debug log
+
+            // Call the general keywords endpoint
+            var response = await _httpClient.PutAsync("api/Notification/settings/keywords", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine($"Server response: {response.StatusCode} - {responseContent}"); // Debug log
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(responseContent);
+                var root = doc.RootElement;
+                
+                if (root.TryGetProperty("success", out var successProp) && successProp.GetBoolean())
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Success = true,
+                        Message = "Keywords updated successfully",
+                        Data = true
+                    };
+                }
+            }
+            
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Failed to update keywords",
+                Data = false
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating keywords: {ex.Message}"); // Debug log
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Network error occurred",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    public async Task<ApiResponse<List<string>>> GetCurrentKeywordsAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("api/Notification/settings");
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ApiResponse<List<string>>
+                {
+                    Success = false,
+                    Message = $"Failed to fetch notification settings: {response.ReasonPhrase}",
+                    Errors = new List<string> { responseContent }
+                };
+            }
+
+            // Parse the API response to find the Keywords setting
+            using var doc = JsonDocument.Parse(responseContent);
+            var root = doc.RootElement;
+            
+            if (root.TryGetProperty("settings", out var settingsElement) && settingsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var setting in settingsElement.EnumerateArray())
+                {
+                    if (setting.TryGetProperty("categoryName", out var categoryNameProp) && 
+                        categoryNameProp.GetString() == "Keywords")
+                    {
+                        if (setting.TryGetProperty("keywords", out var keywordsProp) && 
+                            keywordsProp.ValueKind != JsonValueKind.Null)
+                        {
+                            try
+                            {
+                                var keywords = JsonSerializer.Deserialize<List<string>>(keywordsProp.GetRawText(), _jsonOptions);
+                                return new ApiResponse<List<string>>
+                                {
+                                    Success = true,
+                                    Message = "Keywords retrieved successfully",
+                                    Data = keywords ?? new List<string>()
+                                };
+                            }
+                            catch
+                            {
+                                // Try comma-separated format as fallback
+                                var keywordsString = keywordsProp.GetString();
+                                if (!string.IsNullOrEmpty(keywordsString))
+                                {
+                                    var keywords = keywordsString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                                    return new ApiResponse<List<string>>
+                                    {
+                                        Success = true,
+                                        Message = "Keywords retrieved successfully",
+                                        Data = keywords
+                                    };
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            return new ApiResponse<List<string>>
+            {
+                Success = true,
+                Message = "No keywords configured",
+                Data = new List<string>()
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<List<string>>
             {
                 Success = false,
                 Message = "Network error occurred",
@@ -900,33 +1015,25 @@ public class ApiService : IApiService
 
             if (response.IsSuccessStatusCode)
             {
-                return new ApiResponse<bool>
-                {
-                    Success = true,
-                    Message = "Notification marked as read",
-                    Data = true
-                };
-            }
-            else
-            {
                 using var doc = JsonDocument.Parse(responseContent);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("message", out var messageProp))
+                if (root.TryGetProperty("success", out var successProp) && successProp.GetBoolean())
                 {
                     return new ApiResponse<bool>
                     {
-                        Success = false,
-                        Message = messageProp.GetString() ?? "Failed to mark notification as read",
-                        Data = false
+                        Success = true,
+                        Message = "Notification marked as read",
+                        Data = true
                     };
                 }
-                return new ApiResponse<bool>
-                {
-                    Success = false,
-                    Message = "Failed to mark notification as read",
-                    Data = false
-                };
             }
+            
+            return new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Failed to mark notification as read",
+                Data = false
+            };
         }
         catch (Exception ex)
         {

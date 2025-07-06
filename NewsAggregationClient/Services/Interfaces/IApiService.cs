@@ -21,6 +21,8 @@ public interface IApiService
     Task<ApiResponse<NotificationSettings>> GetNotificationSettingsAsync();
     Task<ApiResponse<bool>> UpdateNotificationSettingsAsync(NotificationSettings settings);
     Task<ApiResponse<bool>> ToggleNotificationCategoryAsync(int categoryId);
+    Task<ApiResponse<bool>> UpdateKeywordsAsync(List<string> keywords);
+    Task<ApiResponse<List<string>>> GetCurrentKeywordsAsync();
     Task<ApiResponse<List<NotificationResponse>>> GetNotificationsAsync();
     Task<ApiResponse<bool>> MarkNotificationAsReadAsync(int notificationId);
     Task<ApiResponse<List<ExternalServerResponseDto>>> GetExternalServersAsync();
