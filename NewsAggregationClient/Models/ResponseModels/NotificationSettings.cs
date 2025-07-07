@@ -1,6 +1,4 @@
 namespace NewsAggregationClient.Models.ResponseModels;
-
-// Model for individual category notification setting from API
 public class CategoryNotificationSetting
 {
     public int? CategoryId { get; set; }
@@ -9,7 +7,6 @@ public class CategoryNotificationSetting
     public bool EmailNotifications { get; set; }
 }
 
-// Model for the API response wrapper
 public class NotificationSettingsResponse
 {
     public bool Success { get; set; }
@@ -25,10 +22,8 @@ public class NotificationSettings
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
-    // Dynamic storage for category notifications
     public Dictionary<string, bool> CategoryNotifications { get; set; } = new();
 
-    // Legacy properties for backward compatibility
     public bool BusinessNotifications 
     { 
         get => CategoryNotifications.GetValueOrDefault("business", false);
@@ -80,7 +75,6 @@ public class NotificationSettings
         set => CategoryNotifications["miscellaneous"] = value;
     }
 
-    // Dynamic method to get/set any category notification
     public bool GetCategoryNotification(string categoryName)
     {
         return CategoryNotifications.GetValueOrDefault(categoryName.ToLower(), false);
@@ -91,7 +85,6 @@ public class NotificationSettings
         CategoryNotifications[categoryName.ToLower()] = enabled;
     }
 
-    // Add these aliases for compatibility
     public bool EmailEnabled => EmailNotifications;
     public bool BusinessEnabled => BusinessNotifications;
     public bool EntertainmentEnabled => EntertainmentNotifications;

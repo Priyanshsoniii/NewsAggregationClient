@@ -1,6 +1,4 @@
-﻿using NewsAggregationClient.Models.ResponseModels;
-using NewsAggregationClient.Models.ClientModels;
-using NewsAggregationClient.Services.Interfaces;
+﻿using NewsAggregationClient.Services.Interfaces;
 using NewsAggregationClient.UI.DisplayServices;
 using NewsAggregationClient.UI.Interfaces;
 
@@ -112,7 +110,6 @@ public class AdminMenuHandler : IMenuHandler
     {
         try
         {
-            // First, show a summary list of all servers and their API keys (masked)
             var allServersResponse = await _apiService.GetExternalServersAsync();
             if (allServersResponse.Success && allServersResponse.Data != null && allServersResponse.Data.Count > 0)
             {
@@ -128,7 +125,6 @@ public class AdminMenuHandler : IMenuHandler
                 _console.DisplayError("No external servers found.");
             }
 
-            // Then, allow the user to select a server for full details
             _console.Write("\nEnter the external server ID to view full details: ");
             var input = _console.ReadLine();
 
@@ -392,7 +388,7 @@ public class AdminMenuHandler : IMenuHandler
         {
             while (true)
             {
-                _console.Clear(); // Clear the console before displaying the menu
+                _console.Clear();
                 _console.WriteLine("Filtered Keywords Management:", ConsoleColor.Cyan);
                 _console.WriteLine("1. View all filtered keywords");
                 _console.WriteLine("2. Add new filtered keyword");
@@ -485,7 +481,6 @@ public class AdminMenuHandler : IMenuHandler
             }
             else
             {
-                // If backend returns success but client fails to parse, show a generic error
                 _console.DisplayError(response.Message ?? "Failed to add filtered keyword. Please check the backend response format.");
             }
         }

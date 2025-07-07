@@ -1,5 +1,4 @@
-﻿using NewsAggregationClient.Models.ClientModels;
-using NewsAggregationClient.Services.Interfaces;
+﻿using NewsAggregationClient.Services.Interfaces;
 using NewsAggregationClient.UI.DisplayServices;
 using NewsAggregationClient.UI.Interfaces;
 using NewsAggregationClient.Models.ResponseModels;
@@ -90,7 +89,7 @@ public class UserMenuHandler : IMenuHandler
                     await ShowHeadlinesByDateRangeAsync(user);
                     break;
                 case "3":
-                    return; // Back to main menu
+                    return; 
                 default:
                     _console.DisplayError("Invalid choice. Please select 1-3.");
                     _console.PressAnyKeyToContinue();
@@ -245,7 +244,6 @@ public class UserMenuHandler : IMenuHandler
                 }
                 if (articles.Any())
                 {
-                    // Mark articles as read when they are displayed
                     await MarkArticlesAsReadAsync(articles);
                     
                     while (true)
@@ -260,7 +258,7 @@ public class UserMenuHandler : IMenuHandler
                         switch (choice)
                         {
                             case "1":
-                                return; // Back
+                                return;
                             case "2":
                                 _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                                 Environment.Exit(0);
@@ -312,17 +310,13 @@ public class UserMenuHandler : IMenuHandler
     {
         try
         {
-            // Mark all displayed articles as read
             var tasks = articles.Select(article => _apiService.MarkArticleAsReadAsync(article.Id));
             await Task.WhenAll(tasks);
             
-            // Log the read tracking (optional)
             _console.WriteLine($"Marked {articles.Count} articles as read", ConsoleColor.Gray);
         }
         catch (Exception ex)
         {
-            // Don't show error to user, just log it silently
-            // This prevents read tracking from breaking the main functionality
             _console.WriteLine($"Note: Read tracking failed: {ex.Message}", ConsoleColor.Gray);
         }
     }
@@ -407,7 +401,6 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Any())
             {
-                // Mark saved articles as read when they are displayed
                 var articles = response.Data.Select(sa => new NewsArticle 
                 { 
                     Id = sa.Id, 
@@ -440,14 +433,14 @@ public class UserMenuHandler : IMenuHandler
                     switch (choice)
                     {
                         case "1":
-                            return; // Back
+                            return;
                         case "2":
                             _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                             Environment.Exit(0);
                             break;
                         case "3":
                             await DeleteSavedArticleAsync(user);
-                            // Refresh the saved articles list
+
                             response = await _apiService.GetSavedArticlesAsync(user.Id);
                             if (!response.Success || response.Data == null || !response.Data.Any())
                             {
@@ -492,7 +485,6 @@ public class UserMenuHandler : IMenuHandler
                 return;
             }
 
-            // Optional: Ask for date range
             _console.Write("Filter by date range? (y/n): ");
             var useDateRange = _console.ReadLine()?.ToLower() == "y";
 
@@ -516,7 +508,6 @@ public class UserMenuHandler : IMenuHandler
                 }
             }
 
-            // Ask for sorting preference
             _consoleDisplay.DisplaySearchSortOptions();
             _console.Write("Enter your choice (1-4): ");
             var sortChoice = _console.ReadLine();
@@ -526,19 +517,19 @@ public class UserMenuHandler : IMenuHandler
 
             switch (sortChoice)
             {
-                case "1": // Published Date (Newest First)
+                case "1": 
                     sortBy = "publishedAt";
                     sortOrder = "desc";
                     break;
-                case "2": // Published Date (Oldest First)
+                case "2": 
                     sortBy = "publishedAt";
                     sortOrder = "asc";
                     break;
-                case "3": // Most Liked
+                case "3": 
                     sortBy = "likes";
                     sortOrder = "desc";
                     break;
-                case "4": // Most Disliked
+                case "4": 
                     sortBy = "dislikes";
                     sortOrder = "desc";
                     break;
@@ -564,7 +555,7 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
             {
-                // Mark search results as read when they are displayed
+
                 await MarkArticlesAsReadAsync(response.Data.Articles);
                 
                 while (true)
@@ -579,7 +570,7 @@ public class UserMenuHandler : IMenuHandler
                     switch (choice)
                     {
                         case "1":
-                            return; // Back
+                            return; 
                         case "2":
                             _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                             Environment.Exit(0);
@@ -626,7 +617,7 @@ public class UserMenuHandler : IMenuHandler
 
             if (response.Success && response.Data != null && response.Data.Articles != null && response.Data.Articles.Any())
             {
-                // Mark personalized articles as read when they are displayed
+
                 await MarkArticlesAsReadAsync(response.Data.Articles);
                 
                 while (true)
@@ -641,7 +632,7 @@ public class UserMenuHandler : IMenuHandler
                     switch (choice)
                     {
                         case "1":
-                            return; // Back
+                            return; 
                         case "2":
                             _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                             Environment.Exit(0);
@@ -810,7 +801,7 @@ public class UserMenuHandler : IMenuHandler
                     await ConfigureNotificationsAsync(user);
                     break;
                 case "3":
-                    return; // Back
+                    return; 
                 case "4":
                     _console.WriteLine("Logging out...", ConsoleColor.Yellow);
                     Environment.Exit(0);
@@ -880,7 +871,6 @@ public class UserMenuHandler : IMenuHandler
         {
             _displayService.DisplayUserWelcome(user.Username, DateTime.Now);
             
-            // Get all available categories dynamically
             var categories = await _apiService.GetCategoriesAsync();
             if (categories == null || categories.Count == 0)
             {
@@ -889,14 +879,12 @@ public class UserMenuHandler : IMenuHandler
                 return;
             }
 
-            // Refresh notification settings from API to get current status
             var settingsResponse = await _apiService.GetNotificationSettingsAsync();
             if (settingsResponse.Success && settingsResponse.Data != null)
             {
                 settings = settingsResponse.Data;
             }
 
-            // Display dynamic notification settings menu
             await DisplayDynamicNotificationSettingsMenu(settings, categories);
 
             _console.Write("Enter your choice: ");
@@ -904,7 +892,6 @@ public class UserMenuHandler : IMenuHandler
 
             if (choice == "1")
             {
-                // Email notifications - use the old method for now
                 settings.EmailNotifications = !settings.EmailNotifications;
                 await UpdateNotificationSettingsAsync(settings);
             }
@@ -918,7 +905,7 @@ public class UserMenuHandler : IMenuHandler
             }
             else if (choice == "4")
             {
-                return; // Back to main menu
+                return; 
             }
             else if (choice == "5")
             {
@@ -927,7 +914,6 @@ public class UserMenuHandler : IMenuHandler
             }
             else if (int.TryParse(choice, out int categoryChoice) && categoryChoice >= 6 && categoryChoice <= 5 + categories.Count)
             {
-                // Dynamic category toggle (options 6+ are category toggles)
                 var categoryIndex = categoryChoice - 6;
                 var category = categories[categoryIndex];
                 await ToggleNotificationCategoryAsync(category.Id);
@@ -945,11 +931,9 @@ public class UserMenuHandler : IMenuHandler
         _console.WriteLine("Notification Settings:", ConsoleColor.Yellow);
         _console.WriteLine("");
 
-        // Email notifications
         var emailStatus = settings.EmailNotifications ? "[ENABLED]" : "[DISABLED]";
         _console.WriteLine($"1. Toggle Email Notifications {emailStatus}", ConsoleColor.White);
 
-        // Keywords and test email - Check server for current keywords first
         var currentKeywords = new List<string>();
         var hasKeywords = false;
         
@@ -964,14 +948,12 @@ public class UserMenuHandler : IMenuHandler
         }
         catch
         {
-            // Fallback to local settings if server call fails
             hasKeywords = !string.IsNullOrEmpty(settings.Keywords);
         }
         
         var keywordStatus = hasKeywords ? "[CONFIGURED]" : "[NOT CONFIGURED]";
         _console.WriteLine($"2. Configure Keywords {keywordStatus}", ConsoleColor.White);
         
-        // Show current keywords if they exist
         if (hasKeywords)
         {
             if (currentKeywords.Any())
@@ -991,7 +973,6 @@ public class UserMenuHandler : IMenuHandler
         _console.WriteLine("", ConsoleColor.White);
         _console.WriteLine("Category Notifications:", ConsoleColor.Yellow);
 
-        // Dynamic category list
         for (int i = 0; i < categories.Count; i++)
         {
             var category = categories[i];
@@ -1004,7 +985,6 @@ public class UserMenuHandler : IMenuHandler
 
     private bool GetCategoryNotificationStatus(NotificationSettings settings, string categoryName)
     {
-        // Use the dynamic method to get category notification status
         return settings.GetCategoryNotification(categoryName);
     }
 
@@ -1026,7 +1006,6 @@ public class UserMenuHandler : IMenuHandler
         {
             _console.DisplayError($"Error updating settings: {ex.Message}");
         }
-        // Remove the PressAnyKeyToContinue so the menu refreshes immediately
     }
 
     private async Task UpdateNotificationSettingsAsync(NotificationSettings settings)
@@ -1061,7 +1040,6 @@ public class UserMenuHandler : IMenuHandler
         {
             try
             {
-                // Handle clearing keywords
                 if (keywordsInput.Trim().ToLower() == "clear")
                 {
                     var response = await _apiService.UpdateKeywordsAsync(new List<string>());
@@ -1076,7 +1054,6 @@ public class UserMenuHandler : IMenuHandler
                 }
                 else
                 {
-                    // Parse comma-separated keywords into a list
                     var keywords = keywordsInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                         .Where(k => !string.IsNullOrWhiteSpace(k))
                         .Select(k => k.Trim())
@@ -1087,7 +1064,6 @@ public class UserMenuHandler : IMenuHandler
                     {
                         _console.WriteLine($"Processing {keywords.Count} keywords...", ConsoleColor.Yellow);
                         
-                        // Call the proper API endpoint with JSON array format
                         var response = await _apiService.UpdateKeywordsAsync(keywords);
                         
                         if (response.Success)

@@ -20,12 +20,11 @@ public class NewsArticle
     public DateTime CreatedAt { get; set; }
     public int Likes { get; set; }
     public int Dislikes { get; set; }
-    public Category Category { get; set; } // Change from string to Category
+    public Category Category { get; set; } 
     public List<object> SavedByUsers { get; set; }
     public bool IsSaved { get; internal set; }
 }
 
-// DTO for API response format
 public class HeadlineDto
 {
     public int Id { get; set; }
@@ -61,12 +60,11 @@ public class Category
     public string Description { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
-    public bool IsHidden { get; set; } // Added for filtering hidden categories
+    public bool IsHidden { get; set; } 
     public List<object> NewsArticles { get; set; }
     public List<object> UserNotificationSettings { get; set; }
 }
 
-// Simple API response wrapper that matches the actual API response
 public class HeadlinesApiResponse
 {
     public bool Success { get; set; }

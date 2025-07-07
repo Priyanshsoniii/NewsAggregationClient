@@ -1,7 +1,5 @@
 ﻿using NewsAggregationClient.Services.Interfaces;
-using NewsAggregationClient.UI.Interfaces;
 using NewsAggregationClient.Models.ResponseModels;
-using NewsAggregationClient.Models.ClientModels;
 
 namespace NewsAggregationClient.UI.DisplayServices;
 
@@ -184,36 +182,6 @@ public class ConsoleDisplayService
         for (int i = 0; i < sortOptions.Count; i++)
         {
             _console.WriteLine($"{i + 1}. {sortOptions[i]}", ConsoleColor.White);
-        }
-        _console.WriteLine("");
-    }
-
-    public void DisplayNotificationSettingsMenu(NotificationSettings settings)
-    {
-        var menuItems = new List<string>
-        {
-            "Toggle Email Notifications",
-            "Toggle Business Notifications",
-            "Toggle Entertainment Notifications",
-            "Toggle Sports Notifications",
-            "Toggle Technology Notifications",
-            "Toggle General Notifications",
-            "Toggle Politics Notifications",
-            "Toggle Games Notifications",
-            "Toggle Songs Notifications",
-            "Toggle Festival Notifications",
-            "Toggle Miscellaneous Notifications",
-            "Configure Keywords",
-            "Back to Main Menu",
-            "Logout"
-        };
-
-        _console.WriteLine("Notification Settings:", ConsoleColor.Yellow);
-        _console.WriteLine("");
-
-        for (int i = 0; i < menuItems.Count; i++)
-        {
-            _console.WriteLine($"{i + 1}. {menuItems[i]}", ConsoleColor.White);
         }
         _console.WriteLine("");
     }

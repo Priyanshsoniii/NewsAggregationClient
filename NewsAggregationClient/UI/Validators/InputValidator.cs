@@ -1,5 +1,4 @@
-﻿// UI/Validators/InputValidator.cs
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace NewsAggregationClient.UI.Validators;
 
@@ -48,58 +47,4 @@ public static class InputValidator
         return "Username must be 3-20 characters long and contain only letters, numbers, and underscores";
     }
 
-    public static bool IsValidMenuChoice(string input, int minChoice, int maxChoice)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return false;
-
-        if (!int.TryParse(input, out int choice))
-            return false;
-
-        return choice >= minChoice && choice <= maxChoice;
-    }
-
-    public static bool IsValidDate(string dateString)
-    {
-        return DateTime.TryParse(dateString, out _);
-    }
-
-    public static bool IsValidDateRange(DateTime startDate, DateTime endDate)
-    {
-        return startDate <= endDate && startDate <= DateTime.Now.Date;
-    }
-
-    public static bool IsValidArticleId(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return false;
-
-        return int.TryParse(input, out int id) && id > 0;
-    }
-
-    public static bool IsValidSearchQuery(string query)
-    {
-        return !string.IsNullOrWhiteSpace(query) && query.Trim().Length >= 2;
-    }
-
-    public static bool IsValidKeyword(string keyword)
-    {
-        return !string.IsNullOrWhiteSpace(keyword) && keyword.Trim().Length >= 2;
-    }
-
-    public static List<string> ValidateKeywords(List<string> keywords)
-    {
-        var validKeywords = new List<string>();
-
-        foreach (var keyword in keywords)
-        {
-            var trimmedKeyword = keyword?.Trim();
-            if (IsValidKeyword(trimmedKeyword))
-            {
-                validKeywords.Add(trimmedKeyword!);
-            }
-        }
-
-        return validKeywords.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-    }
 }

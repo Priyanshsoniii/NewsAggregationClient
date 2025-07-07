@@ -164,7 +164,6 @@ public class ApiService : IApiService
                 };
             }
 
-            // Direct deserialization to the API response format
             var apiResponse = await response.Content.ReadFromJsonAsync<HeadlinesApiResponse>(_jsonOptions);
             
             if (apiResponse?.Headlines == null)
@@ -177,7 +176,6 @@ public class ApiService : IApiService
                 };
             }
 
-            // Simple mapping to NewsArticle
             var articles = apiResponse.Headlines.Select(h => new NewsArticle
             {
                 Id = h.Id,
@@ -228,7 +226,6 @@ public class ApiService : IApiService
         }
     }
 
-    // Super simple version - if you want to eliminate wrapper classes entirely
     public async Task<List<NewsArticle>> GetHeadlinesSimpleAsync()
     {
         try

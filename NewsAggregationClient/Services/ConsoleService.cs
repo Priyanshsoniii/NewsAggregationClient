@@ -1,5 +1,4 @@
-﻿// Services/ConsoleService.cs
-using NewsAggregationClient.Services.Interfaces;
+﻿using NewsAggregationClient.Services.Interfaces;
 
 namespace NewsAggregationClient.Services;
 
