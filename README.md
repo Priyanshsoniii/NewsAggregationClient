@@ -1,4 +1,4 @@
-# News Aggregation Server
+# News Aggregation Client
 
 ## Overview
 
