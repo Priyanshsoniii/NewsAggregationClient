@@ -396,7 +396,6 @@ public class ApiService : IApiService
             }
             catch
             {
-                // fallback: try to parse as { "headlines": [...] }
                 using (var doc = JsonDocument.Parse(responseContent))
                 {
                     var root = doc.RootElement;
@@ -437,7 +436,6 @@ public class ApiService : IApiService
     {
         try
         {
-            // Build query parameters
             var queryParams = new List<string>();
             queryParams.Add($"query={Uri.EscapeDataString(request.Query)}");
             
@@ -485,7 +483,6 @@ public class ApiService : IApiService
                 };
             }
 
-            // The API returns a direct array of articles
             var articles = JsonSerializer.Deserialize<List<NewsArticle>>(responseContent, _jsonOptions) ?? new List<NewsArticle>();
 
             var newsResponse = new NewsResponse
@@ -562,7 +559,6 @@ public class ApiService : IApiService
             var responseContent = await response.Content.ReadAsStringAsync();
 
             var result = JsonSerializer.Deserialize<ApiResponse<ExternalServerResponseDto>>(responseContent, _jsonOptions);
-            // Fallback: try to extract 'server' property if present
             using (var doc = JsonDocument.Parse(responseContent))
             {
                 if (doc.RootElement.TryGetProperty("server", out var serverElement) && serverElement.ValueKind == JsonValueKind.Object)
@@ -600,7 +596,6 @@ public class ApiService : IApiService
             var response = await _httpClient.PutAsync($"api/Admin/servers/{serverId}", content);
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            // Accept both { success, message, data } and { message, server }
             using (var doc = JsonDocument.Parse(responseContent))
             {
                 if (doc.RootElement.TryGetProperty("message", out var msgProp) &&
@@ -671,7 +666,6 @@ public class ApiService : IApiService
                 };
             }
 
-            // Parse the API response structure
             var apiResponse = JsonSerializer.Deserialize<NotificationSettingsResponse>(responseContent, _jsonOptions);
             
             if (apiResponse?.Settings == null)
@@ -684,10 +678,9 @@ public class ApiService : IApiService
                 };
             }
 
-            // Map the API response to NotificationSettings object
             var settings = new NotificationSettings
             {
-                EmailNotifications = true, // Default to true as per API response
+                EmailNotifications = true,
                 BusinessNotifications = false,
                 EntertainmentNotifications = false,
                 SportsNotifications = false,
@@ -700,16 +693,13 @@ public class ApiService : IApiService
                 MiscellaneousNotifications = false
             };
 
-            // Map category settings based on categoryId
             foreach (var categorySetting in apiResponse.Settings)
             {
                 if (categorySetting.CategoryName.Equals("Keywords", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Handle keywords separately if needed
                     continue;
                 }
 
-                // Dynamic mapping - store all categories in the dictionary
                 settings.SetCategoryNotification(categorySetting.CategoryName, categorySetting.IsEnabled);
             }
 
@@ -831,7 +821,6 @@ public class ApiService : IApiService
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // Call the general keywords endpoint
             var response = await _httpClient.PutAsync("api/Notification/settings/keywords", content);
             var responseContent = await response.Content.ReadAsStringAsync();
 
@@ -886,7 +875,6 @@ public class ApiService : IApiService
                 };
             }
 
-            // Parse the API response to find the Keywords setting
             using var doc = JsonDocument.Parse(responseContent);
             var root = doc.RootElement;
             
@@ -912,7 +900,7 @@ public class ApiService : IApiService
                             }
                             catch
                             {
-                                // Try comma-separated format as fallback
+
                                 var keywordsString = keywordsProp.GetString();
                                 if (!string.IsNullOrEmpty(keywordsString))
                                 {
@@ -1141,7 +1129,6 @@ public class ApiService : IApiService
     {
         try
         {
-            // Use PATCH and include the 'hide' query parameter as expected by the server
             var request = new HttpRequestMessage(HttpMethod.Patch, $"api/Admin/articles/{articleId}/hide?hide=true");
             var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -1191,7 +1178,6 @@ public class ApiService : IApiService
     {
         try
         {
-            // Use PATCH and include the 'hide' query parameter as expected by the server
             var request = new HttpRequestMessage(HttpMethod.Patch, $"api/Admin/categories/{categoryId}/hide?hide=true");
             var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -1241,7 +1227,6 @@ public class ApiService : IApiService
     {
         try
         {
-            // The backend expects a raw string as the request body
             var content = new StringContent($"\"{keyword}\"", Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync("api/Admin/filtered-keywords", content);
@@ -1547,7 +1532,6 @@ public class ApiService : IApiService
             return new List<Category>();
         }
         var allCategories = JsonSerializer.Deserialize<List<Category>>(responseContent, _jsonOptions) ?? new List<Category>();
-        // Filter out hidden categories using direct property access
         return allCategories.Where(c => c.IsHidden == false).ToList();
     }
 
