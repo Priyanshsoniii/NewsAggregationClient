@@ -16,6 +16,7 @@ public class NewsArticle
     public string Url { get; set; }
     public string Source { get; set; }
     public int CategoryId { get; set; }
+    public string CategoryName { get; set; }
     public DateTime PublishedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public int Likes { get; set; }

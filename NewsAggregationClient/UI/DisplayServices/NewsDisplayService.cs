@@ -38,7 +38,8 @@ public class NewsDisplayService : IDisplayService
         _console.WriteLine($"Description: {TruncateText(article.Description, 200)}", ConsoleColor.Gray);
         _console.WriteLine($"Source: {article.Source}", ConsoleColor.Green);
         _console.WriteLine($"URL: {article.Url}", ConsoleColor.Blue);
-        _console.WriteLine($"Category: {article.Category?.Name ?? "N/A"}", ConsoleColor.Magenta);
+        var category = !string.IsNullOrEmpty(article.CategoryName) ? article.CategoryName : (article.Category?.Name ?? "N/A");
+        _console.WriteLine($"Category: {category}", ConsoleColor.Magenta);
 
         if (article.Likes > 0 || article.Dislikes > 0)
         {
