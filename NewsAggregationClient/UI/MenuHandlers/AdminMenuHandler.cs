@@ -392,6 +392,7 @@ public class AdminMenuHandler : IMenuHandler
         {
             while (true)
             {
+                _console.Clear(); // Clear the console before displaying the menu
                 _console.WriteLine("Filtered Keywords Management:", ConsoleColor.Cyan);
                 _console.WriteLine("1. View all filtered keywords");
                 _console.WriteLine("2. Add new filtered keyword");
@@ -437,7 +438,7 @@ public class AdminMenuHandler : IMenuHandler
                 _console.WriteLine($"\nFiltered Keywords (count: {response.Data.Count}):", ConsoleColor.Cyan);
                 foreach (var keyword in response.Data)
                 {
-                    _console.WriteLine($"- {keyword}", ConsoleColor.White);
+                    _console.WriteLine($"- {keyword.Keyword} (added: {keyword.CreatedAt:yyyy-MM-dd HH:mm:ss})", ConsoleColor.White);
                 }
             }
             else
@@ -484,7 +485,8 @@ public class AdminMenuHandler : IMenuHandler
             }
             else
             {
-                _console.DisplayError(response.Message ?? "Failed to add filtered keyword.");
+                // If backend returns success but client fails to parse, show a generic error
+                _console.DisplayError(response.Message ?? "Failed to add filtered keyword. Please check the backend response format.");
             }
         }
         catch (Exception ex)

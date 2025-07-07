@@ -31,7 +31,7 @@ public interface IApiService
     Task<ApiResponse<bool>> HideArticleAsync(int articleId);
     Task<ApiResponse<bool>> HideCategoryAsync(int categoryId);
     Task<ApiResponse<bool>> AddFilteredKeywordAsync(string keyword);
-    Task<ApiResponse<List<string>>> GetFilteredKeywordsAsync();
+    Task<ApiResponse<List<FilteredKeyword>>> GetFilteredKeywordsAsync();
     Task<ApiResponse<NewsResponse>> GetPersonalizedHeadlinesAsync();
     Task<ApiResponse<bool>> LikeArticleAsync(int articleId);
     Task<ApiResponse<bool>> DislikeArticleAsync(int articleId);

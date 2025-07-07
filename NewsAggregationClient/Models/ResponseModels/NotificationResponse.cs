@@ -10,4 +10,11 @@ public class NotificationResponse
     public bool IsRead { get; set; } = false;
     public DateTime CreatedAt { get; set; }
     public DateTime? ReadAt { get; set; }
+}
+
+public class FilteredKeyword
+{
+    public int Id { get; set; }
+    public string Keyword { get; set; }
+    public DateTime CreatedAt { get; set; }
 } 

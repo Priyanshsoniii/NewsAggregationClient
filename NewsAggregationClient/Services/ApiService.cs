@@ -1144,7 +1144,9 @@ public class ApiService : IApiService
     {
         try
         {
-            var response = await _httpClient.PutAsync($"api/Admin/articles/{articleId}/hide", null);
+            // Use PATCH and include the 'hide' query parameter as expected by the server
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"api/Admin/articles/{articleId}/hide?hide=true");
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
@@ -1192,7 +1194,9 @@ public class ApiService : IApiService
     {
         try
         {
-            var response = await _httpClient.PutAsync($"api/Admin/categories/{categoryId}/hide", null);
+            // Use PATCH and include the 'hide' query parameter as expected by the server
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"api/Admin/categories/{categoryId}/hide?hide=true");
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
@@ -1240,9 +1244,8 @@ public class ApiService : IApiService
     {
         try
         {
-            var request = new { Keyword = keyword };
-            var json = JsonSerializer.Serialize(request, _jsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            // The backend expects a raw string as the request body
+            var content = new StringContent($"\"{keyword}\"", Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync("api/Admin/filtered-keywords", content);
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -1288,7 +1291,7 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<ApiResponse<List<string>>> GetFilteredKeywordsAsync()
+    public async Task<ApiResponse<List<FilteredKeyword>>> GetFilteredKeywordsAsync()
     {
         try
         {
@@ -1297,7 +1300,7 @@ public class ApiService : IApiService
 
             if (!response.IsSuccessStatusCode)
             {
-                return new ApiResponse<List<string>>
+                return new ApiResponse<List<FilteredKeyword>>
                 {
                     Success = false,
                     Message = $"Failed to fetch filtered keywords: {response.ReasonPhrase}",
@@ -1305,17 +1308,17 @@ public class ApiService : IApiService
                 };
             }
 
-            List<string> keywords = new();
+            List<FilteredKeyword> keywords = new();
             using (var doc = JsonDocument.Parse(responseContent))
             {
                 var root = doc.RootElement;
                 if (root.TryGetProperty("keywords", out var keywordsElement) && keywordsElement.ValueKind == JsonValueKind.Array)
                 {
-                    keywords = JsonSerializer.Deserialize<List<string>>(keywordsElement.GetRawText(), _jsonOptions) ?? new List<string>();
+                    keywords = JsonSerializer.Deserialize<List<FilteredKeyword>>(keywordsElement.GetRawText(), _jsonOptions) ?? new List<FilteredKeyword>();
                 }
             }
 
-            return new ApiResponse<List<string>>
+            return new ApiResponse<List<FilteredKeyword>>
             {
                 Success = true,
                 Message = "Filtered keywords fetched successfully",
@@ -1324,7 +1327,7 @@ public class ApiService : IApiService
         }
         catch (Exception ex)
         {
-            return new ApiResponse<List<string>>
+            return new ApiResponse<List<FilteredKeyword>>
             {
                 Success = false,
                 Message = "Network error occurred",
@@ -1546,7 +1549,9 @@ public class ApiService : IApiService
         {
             return new List<Category>();
         }
-        return JsonSerializer.Deserialize<List<Category>>(responseContent, _jsonOptions) ?? new List<Category>();
+        var allCategories = JsonSerializer.Deserialize<List<Category>>(responseContent, _jsonOptions) ?? new List<Category>();
+        // Filter out hidden categories using direct property access
+        return allCategories.Where(c => c.IsHidden == false).ToList();
     }
 
     public async Task<ApiResponse<bool>> SendTestEmailNotificationAsync(string userEmail)
@@ -1649,27 +1654,27 @@ public class ApiService : IApiService
     {
         try
         {
-            var response = await _httpClient.PostAsync("api/Admin/fix-categories", null);
+            var response = await _httpClient.PostAsync("api/ExternalNews/re-categorize", null);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
                 using var doc = JsonDocument.Parse(responseContent);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("articlesFixed", out var fixedProp))
+                int updatedCount = 0;
+                string message = "All articles re-categorized.";
+                if (root.TryGetProperty("updatedCount", out var updatedCountProp))
                 {
-                    var fixedCount = fixedProp.GetInt32();
-                    return new ApiResponse<bool>
-                    {
-                        Success = true,
-                        Message = $"Fixed {fixedCount} articles with invalid categories",
-                        Data = true
-                    };
+                    updatedCount = updatedCountProp.GetInt32();
+                }
+                if (root.TryGetProperty("message", out var messageProp))
+                {
+                    message = messageProp.GetString() ?? message;
                 }
                 return new ApiResponse<bool>
                 {
                     Success = true,
-                    Message = "Invalid categories fixed successfully",
+                    Message = $"{message} (Updated: {updatedCount})",
                     Data = true
                 };
             }
@@ -1682,14 +1687,14 @@ public class ApiService : IApiService
                     return new ApiResponse<bool>
                     {
                         Success = false,
-                        Message = errorProp.GetString() ?? "Failed to fix invalid categories",
+                        Message = errorProp.GetString() ?? "Failed to re-categorize articles",
                         Data = false
                     };
                 }
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Failed to fix invalid categories",
+                    Message = "Failed to re-categorize articles",
                     Data = false
                 };
             }
